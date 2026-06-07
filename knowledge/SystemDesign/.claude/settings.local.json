@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import yaml; print\\('yaml ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python tools/lint.py)",
+      "Bash(python tools/build_roadmaps.py)",
+      "Bash(python tools/export_anki.py)"
+    ]
+  }
+}

@@ -1,0 +1,1007 @@
+{
+  "saveSpecVer": 10203,
+  "enableSave": true,
+  "enableShow": true,
+  "currentSlotNum": 5,
+  "themeSlotNum": {
+    "dark": 5,
+    "light": 1
+  },
+  "openInCurrentTab": false,
+  "enableTagsReaction": true,
+  "enableAutoFocus": true,
+  "enableParagraphLinker": true,
+  "snapShotFolder": "graph-screenshot",
+  "currentTheme": "dark",
+  "customSlot": null,
+  "showingFilter": "Kg==",
+  "hidingFilter": "",
+  "dark": [
+    {
+      "node_size": 1,
+      "node_repulsion": 0,
+      "link_distance": 16,
+      "link_width": 1,
+      "link_particle_size": 3,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 1,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": false,
+      "colorMapSource": "'Obsidian' - dark ",
+      "colorMap": {
+        "markdown": {
+          "name": "theme",
+          "value": "#b3b3b3"
+        },
+        "attachment": {
+          "name": "theme",
+          "value": "#e0de71"
+        },
+        "broken": {
+          "name": "theme",
+          "value": "#666666"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "theme",
+          "value": "#44cf6e"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "theme",
+          "value": "#8a5cf5"
+        },
+        "nodeFocusColor": {
+          "name": "theme",
+          "value": "#a68af9"
+        },
+        "linkHighlightColor": {
+          "name": "theme",
+          "value": "#8a5cf5"
+        },
+        "linkNormalColor": {
+          "name": "theme",
+          "value": "#3f3f3f"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 17,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Default dark",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 17,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Default dark",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 17,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Default dark",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 17,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Default dark",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 1,
+      "node_repulsion": 0,
+      "link_distance": 16,
+      "link_width": 1,
+      "link_particle_size": 3,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 1,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": false,
+      "colorMapSource": "'Obsidian' - dark ",
+      "colorMap": {
+        "markdown": {
+          "name": "theme",
+          "value": "#b3b3b3"
+        },
+        "attachment": {
+          "name": "theme",
+          "value": "#e0de71"
+        },
+        "broken": {
+          "name": "theme",
+          "value": "#666666"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "theme",
+          "value": "#44cf6e"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "theme",
+          "value": "#8a5cf5"
+        },
+        "nodeFocusColor": {
+          "name": "theme",
+          "value": "#a68af9"
+        },
+        "linkHighlightColor": {
+          "name": "theme",
+          "value": "#8a5cf5"
+        },
+        "linkNormalColor": {
+          "name": "theme",
+          "value": "#3f3f3f"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#000003"
+        }
+      },
+      "cameraDistance": 0
+    }
+  ],
+  "light": [
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    },
+    {
+      "node_size": 5,
+      "node_repulsion": 0,
+      "link_distance": 5,
+      "link_width": 1,
+      "link_particle_size": 2,
+      "link_particle_number": 2,
+      "text_color_angle": 0,
+      "bloom_strength": 2,
+      "toggle_global_map": true,
+      "toggle_label_display": false,
+      "toggle_highlight_track_mode": false,
+      "toggle_selection_box": true,
+      "colorMapSource": "Defalt light",
+      "colorMap": {
+        "markdown": {
+          "name": "default",
+          "value": "#00ff00"
+        },
+        "attachment": {
+          "name": "default",
+          "value": "#ffff00"
+        },
+        "broken": {
+          "name": "default",
+          "value": "#ff0000"
+        },
+        "excalidraw": {
+          "name": "default",
+          "value": "#00ffff"
+        },
+        "pdf": {
+          "name": "default",
+          "value": "#0000ff"
+        },
+        "tag": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "frontmatter_tag": {
+          "name": "default",
+          "value": "#fa8072"
+        },
+        "screenshot": {
+          "name": "default",
+          "value": "#7f00ff"
+        },
+        "nodeHighlightColor": {
+          "name": "default",
+          "value": "#3333ff"
+        },
+        "nodeFocusColor": {
+          "name": "default",
+          "value": "#ff3333"
+        },
+        "linkHighlightColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkNormalColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleColor": {
+          "name": "default",
+          "value": "#ffffff"
+        },
+        "linkParticleHighlightColor": {
+          "name": "default",
+          "value": "#ff00ff"
+        },
+        "selectionBoxColor": {
+          "name": "default",
+          "value": "#e0ac00"
+        },
+        "backgroundColor": {
+          "name": "default",
+          "value": "#ffffff"
+        }
+      },
+      "cameraDistance": 0
+    }
+  ]
+}

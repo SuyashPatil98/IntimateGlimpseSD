@@ -1,0 +1,34 @@
+{
+  "pluginList": [
+    "AlexW00/obsidian-3d-graph",
+    "kctekn/obsidian-TagsRoutes",
+    "Apoo711/obsidian-3d-graph"
+  ],
+  "pluginSubListFrozenVersion": [
+    {
+      "repo": "AlexW00/obsidian-3d-graph",
+      "version": "latest"
+    },
+    {
+      "repo": "kctekn/obsidian-TagsRoutes",
+      "version": "latest"
+    },
+    {
+      "repo": "Apoo711/obsidian-3d-graph",
+      "version": "2.4.1"
+    }
+  ],
+  "themesList": [],
+  "updateAtStartup": true,
+  "updateThemesAtStartup": true,
+  "enableAfterInstall": true,
+  "loggingEnabled": false,
+  "loggingPath": "BRAT-log",
+  "loggingVerboseEnabled": false,
+  "debuggingMode": false,
+  "notificationsEnabled": true,
+  "globalTokenName": "",
+  "personalAccessToken": "",
+  "selectLatestPluginVersionByDefault": false,
+  "allowIncompatiblePlugins": false
+}

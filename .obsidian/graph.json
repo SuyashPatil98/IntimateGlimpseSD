@@ -1,0 +1,121 @@
+{
+  "collapse-filter": false,
+  "search": "-file:index -file:log -file:schema -file:source-map -file:SESSION_STATE -file:wiki",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": false,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "path:databases  ",
+      "color": {
+        "a": 1,
+        "rgb": 5431473
+      }
+    },
+    {
+      "query": "path:networking  ",
+      "color": {
+        "a": 1,
+        "rgb": 14725458
+      }
+    },
+    {
+      "query": "path:storage  ",
+      "color": {
+        "a": 1,
+        "rgb": 11657298
+      }
+    },
+    {
+      "query": "path:messaging  ",
+      "color": {
+        "a": 1,
+        "rgb": 5431378
+      }
+    },
+    {
+      "query": "path:caching  ",
+      "color": {
+        "a": 1,
+        "rgb": 5431473
+      }
+    },
+    {
+      "query": "path:reliability  ",
+      "color": {
+        "a": 1,
+        "rgb": 5419488
+      }
+    },
+    {
+      "query": "path:architecture-patterns  ",
+      "color": {
+        "a": 1,
+        "rgb": 5395168
+      }
+    },
+    {
+      "query": "path:design-patterns  ",
+      "color": {
+        "a": 1,
+        "rgb": 11621088
+      }
+    },
+    {
+      "query": "path:software-engineering  ",
+      "color": {
+        "a": 1,
+        "rgb": 14701233
+      }
+    },
+    {
+      "query": "path:data-engineering  ",
+      "color": {
+        "a": 1,
+        "rgb": 7799555
+      }
+    },
+    {
+      "query": "path:ml-systems  ",
+      "color": {
+        "a": 1,
+        "rgb": 7359232
+      }
+    },
+    {
+      "query": "path:system-design-interview  ",
+      "color": {
+        "a": 1,
+        "rgb": 4878081
+      }
+    },
+    {
+      "query": "path:case-studies  ",
+      "color": {
+        "a": 1,
+        "rgb": 1114367
+      }
+    },
+    {
+      "query": "path: distributed-systems  ",
+      "color": {
+        "a": 1,
+        "rgb": 8258141
+      }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": false,
+  "textFadeMultiplier": -3,
+  "nodeSizeMultiplier": 0.559375,
+  "lineSizeMultiplier": 0.40625,
+  "collapse-forces": false,
+  "centerStrength": 0.0989583333333333,
+  "repelStrength": 4.375,
+  "linkStrength": 0.338541666666667,
+  "linkDistance": 123,
+  "scale": 0.04231590268975909,
+  "close": false
+}

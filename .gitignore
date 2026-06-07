@@ -1,0 +1,41 @@
+# ── Python ───────────────────────────────────────────────
+.venv/
+.venv-win/
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+*.egg-info/
+
+# ── Node / frontend ──────────────────────────────────────
+node_modules/
+course-app/dist/
+course-app-react/node_modules/
+course-app-react/dist/
+
+# ── Secrets & runtime state ──────────────────────────────
+.env
+.env.local
+state.db
+state.db-*
+*.sqlite
+*.sqlite3
+
+# ── Generated artifacts ──────────────────────────────────
+course-app/public/course-data.json
+tools/anki/*.apkg
+.embeddings_cache/
+
+# ── Large immutable source PDFs (kept on disk, not versioned) ──
+*.pdf
+
+# ── Obsidian volatile state (keep plugin configs, drop workspace) ──
+**/.obsidian/workspace.json
+**/.obsidian/workspace-mobile.json
+**/.obsidian/workspace*.bak
+
+# ── OS noise ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

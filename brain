@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# brain — CLI entry point for the System Design knowledge engine.
+#
+# Usage:
+#   brain ask "Design Twitter"
+#   brain reflect
+#
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
+case "${1:-}" in
+    ask)
+        shift
+        exec python3 "$DIR/tools/query_engine.py" "$@"
+        ;;
+    reflect)
+        shift
+        exec python3 "$DIR/tools/reflection_engine.py" "$@"
+        ;;
+    ""|--help|-h)
+        echo "brain — System Design knowledge engine"
+        echo ""
+        echo "Usage:"
+        echo "  brain ask <question>    Query the knowledge base via local LLM"
+        echo "  brain reflect           Generate a reflection report"
+        echo ""
+        echo "Configuration (environment):"
+        echo "  OLLAMA_HOST   Ollama URL   (default: http://localhost:11434)"
+        echo "  OLLAMA_MODEL  Model name   (default: qwen3:8b)"
+        exit 0
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        echo "Run 'brain --help' for usage." >&2
+        exit 1
+        ;;
+esac

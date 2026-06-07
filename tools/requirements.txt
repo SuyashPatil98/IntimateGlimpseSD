@@ -1,0 +1,31 @@
+# SystemDesignAI backend — Python 3.12
+# Canonical runtime is the Docker image (Linux); this file reproduces it.
+# Local Windows dev: py -3.12 -m venv .venv-win && .venv-win/Scripts/python -m pip install -r tools/requirements.txt
+
+# ── Web / API ────────────────────────────────────────────
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-dotenv>=1.0
+httpx>=0.27
+requests>=2.31
+
+# ── Data / vault parsing ─────────────────────────────────
+pyyaml>=6.0
+sqlmodel>=0.0.16          # SQLite interaction-state store (sessions, flashcards, analytics)
+
+# ── LLM backends ─────────────────────────────────────────
+anthropic>=0.39           # Claude (compile/promote primary, ask fallback)
+# Ollama (Qwen) is reached over HTTP via httpx — no SDK needed.
+
+# ── Retrieval: hybrid (sparse + dense) + rerank ──────────
+rank-bm25>=0.2.2          # sparse / exact-term
+sentence-transformers>=3.0 # bge-base bi-encoder + bge-reranker cross-encoder (pulls torch)
+faiss-cpu>=1.8            # optional ANN index (numpy fallback if absent)
+numpy>=1.26
+
+# ── Ingest pipeline ──────────────────────────────────────
+pymupdf4llm>=0.0.17       # PDF -> markdown extraction
+watchdog>=4.0            # raw/ file watcher (separate process)
+
+# ── Dev / test ───────────────────────────────────────────
+pytest>=8.0

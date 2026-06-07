@@ -1,0 +1,98 @@
+{
+  "searchQuery": "",
+  "showNeighboringNodes": true,
+  "filters": [],
+  "showAttachments": false,
+  "hideOrphans": false,
+  "showTags": false,
+  "groups": [
+    {
+      "query": "path: databases ",
+      "color": "#00ff7b"
+    },
+    {
+      "query": "path: distributed-systems",
+      "color": "#d70f4b"
+    },
+    {
+      "query": "path: networking",
+      "color": "#b1f005"
+    },
+    {
+      "query": "path: storage",
+      "color": "#161dd4"
+    },
+    {
+      "query": "path: messaging",
+      "color": "#e100ff"
+    },
+    {
+      "query": "path: caching",
+      "color": "#0bdfef"
+    },
+    {
+      "query": "path: reliability",
+      "color": "#ff5900"
+    },
+    {
+      "query": "path: architecture-patterns",
+      "color": "#ff9e9e"
+    },
+    {
+      "query": "path: design-patterns",
+      "color": "#687311"
+    },
+    {
+      "query": "path: softwate-engineering",
+      "color": "#2a3a7a"
+    },
+    {
+      "query": "path: data-engineering",
+      "color": "#14421a"
+    },
+    {
+      "query": "path: ml-systems",
+      "color": "#2e0264"
+    },
+    {
+      "query": "path: system-design-interview",
+      "color": "#d0016f"
+    },
+    {
+      "query": "path: case-studies",
+      "color": "#42855f"
+    }
+  ],
+  "useThemeColors": true,
+  "colorNode": "#2080F0",
+  "colorTag": "#9A49E8",
+  "colorAttachment": "#75B63A",
+  "colorLink": "#666666",
+  "colorHighlight": "#FFB800",
+  "backgroundColor": "#0E0E10",
+  "nodeSize": 1,
+  "tagNodeSize": 0.8,
+  "attachmentNodeSize": 0.9,
+  "linkThickness": 0.4,
+  "nodeShape": "Tetrahedron",
+  "tagShape": "Sphere",
+  "attachmentShape": "Sphere",
+  "showNodeLabels": true,
+  "labelDistance": 320,
+  "labelFadeThreshold": 0.8,
+  "labelTextSize": 2.5,
+  "labelTextColorLight": "#000000",
+  "labelTextColorDark": "#ffffff",
+  "labelBackgroundColor": "#ffffff",
+  "labelBackgroundOpacity": 0.3,
+  "labelOcclusion": false,
+  "useKeyboardControls": true,
+  "keyboardMoveSpeed": 3.8,
+  "zoomOnClick": true,
+  "rotateSpeed": 1,
+  "panSpeed": 1.9,
+  "zoomSpeed": 1,
+  "centerForce": 0.15,
+  "repelForce": 14.4,
+  "linkForce": 0.041
+}
