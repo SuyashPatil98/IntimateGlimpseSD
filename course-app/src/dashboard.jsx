@@ -355,7 +355,7 @@ const Dashboard = ({ onStart }) => (
       <div>
         <div className="t-label" style={{ marginBottom: 4 }}>COCKPIT · DAY {MOCK_VAULT_STATS.streakDays}</div>
         <h1 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--text-hi)", letterSpacing: "-0.015em" }}>
-          Good morning. <span style={{ color: "var(--text-dim)" }}>Vault is at <span style={{ color: "var(--accent-hi)" }}>312 notes</span>.</span>
+          Good morning. <span style={{ color: "var(--text-dim)" }}>Vault is at <span style={{ color: "var(--accent-hi)" }}>{MOCK_VAULT_STATS.total} notes</span>.</span>
         </h1>
       </div>
       <div style={{ display: "flex", gap: 8 }}>

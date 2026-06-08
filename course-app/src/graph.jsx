@@ -87,8 +87,8 @@ const useGraphLayout = (nodes, edges, w, h) => {
     const pos = nodes.map((n, i) => {
       const a = areaIdx[n.area] ?? i;
       const ang = (a / AREA_ORDER.length) * Math.PI * 2 - Math.PI / 2;
-      // deterministic jitter per node id
-      const seed = parseInt(n.id.slice(1), 10);
+      // deterministic jitter per node id (hash so any string id works)
+      let seed = 0; for (let k = 0; k < n.id.length; k++) seed = (seed * 31 + n.id.charCodeAt(k)) >>> 0;
       const jx = ((seed * 31) % 100 - 50) / 50;
       const jy = ((seed * 53) % 100 - 50) / 50;
       return {
@@ -177,8 +177,18 @@ const Graph = () => {
     return () => ro.disconnect();
   }, []);
 
-  const nodes = GRAPH_NODES;
-  const edges = GRAPH_EDGES;
+  const [data, setData] = useState({ nodes: GRAPH_NODES, edges: GRAPH_EDGES });
+  useEffect(() => {
+    fetch("/api/graph").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d || !d.nodes || !d.nodes.length) return;
+      // Cap to the most-connected nodes so the client force-layout stays smooth.
+      const top = [...d.nodes].sort((a, b) => (b.inbound || 0) - (a.inbound || 0)).slice(0, 120);
+      const ids = new Set(top.map((n) => n.id));
+      setData({ nodes: top, edges: d.edges.filter(([a, b]) => ids.has(a) && ids.has(b)) });
+    }).catch(() => {});
+  }, []);
+  const nodes = data.nodes;
+  const edges = data.edges;
   const { byId, adj } = useGraphLayout(nodes, edges, dim.w, dim.h);
 
   const visible = (n) => {

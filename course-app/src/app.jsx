@@ -135,13 +135,22 @@ const App = () => {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [health, setHealth] = useState(MOCK_HEALTH);
   const [vaultStats, setVaultStats] = useState(MOCK_VAULT_STATS);
+  const [, setTick] = useState(0);
 
-  // Live backend health + vault size (top bar), polled every 12s.
+  // Live backend data, polled. Dashboard reads MOCK_* globals, so we overwrite
+  // them with live data and bump a tick to re-render (no edits to dashboard.jsx).
   useEffect(() => {
-    const load = () => {
-      fetch("/api/health").then((r) => (r.ok ? r.json() : null)).then((d) => {
-        if (d) { setHealth(d); setVaultStats((v) => ({ ...v, total: d.vault.pages })); }
-      }).catch(() => {});
+    const j = (p) => fetch(p).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const load = async () => {
+      const [h, stats, cov, recent] = await Promise.all([
+        j("/api/health"), j("/api/vault/stats"),
+        j("/api/areas/coverage"), j("/api/vault/recent-promoted?n=5"),
+      ]);
+      if (h) setHealth(h);
+      if (stats) { window.MOCK_VAULT_STATS = { ...window.MOCK_VAULT_STATS, ...stats }; setVaultStats(window.MOCK_VAULT_STATS); }
+      if (cov && cov.length) window.MOCK_AREA_COVERAGE = cov;
+      if (Array.isArray(recent) && recent.length) window.MOCK_RECENT_PROMOTED = recent;
+      setTick((t) => t + 1);
     };
     load();
     const id = setInterval(load, 12000);
@@ -204,4 +213,6 @@ const App = () => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// HMR-safe mount: reuse the root across hot reloads.
+if (!window.__sdaRoot) window.__sdaRoot = ReactDOM.createRoot(document.getElementById("root"));
+window.__sdaRoot.render(<App />);
