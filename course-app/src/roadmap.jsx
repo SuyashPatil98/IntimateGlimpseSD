@@ -5,7 +5,7 @@ const { useState } = React;
 // =========================================================
 // MOCK ROADMAP — milestone-based study plan
 // =========================================================
-const ROADMAP_MILESTONES = [
+const ROADMAP_FALLBACK = [
   {
     id: "m1", lane: "shipped", title: "Distributed Systems Foundations",
     target: "Q4 2025 · complete",  progress: 100,
@@ -97,6 +97,12 @@ const LANES = [
 // ROADMAP VIEW
 // =========================================================
 const Roadmap = () => {
+  const [milestones, setMilestones] = React.useState(ROADMAP_FALLBACK);
+  React.useEffect(() => {
+    fetch("/api/roadmap").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (Array.isArray(d) && d.length) setMilestones(d);
+    }).catch(() => {});
+  }, []);
   return (
     <div style={{ height: "100%", overflow: "auto", padding: "18px 24px 60px" }}>
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
@@ -108,7 +114,7 @@ const Roadmap = () => {
               The plan
             </h1>
             <div className="t-mono" style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 6 }}>
-              7 milestones · 2 shipped · 1 in progress · {ROADMAP_MILESTONES.reduce((s,m) => s + (m.notesPlanned - m.notesDone), 0)} notes to write
+              7 milestones · 2 shipped · 1 in progress · {milestones.reduce((s,m) => s + (m.notesPlanned - m.notesDone), 0)} notes to write
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -131,14 +137,14 @@ const Roadmap = () => {
             <div className="t-label">OVERALL PROGRESS</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 2 }}>
               <div className="t-mono t-num" style={{ fontSize: 28, color: "var(--accent-hi)", lineHeight: 1 }}>
-                {Math.round(ROADMAP_MILESTONES.reduce((s,m) => s + m.progress, 0) / ROADMAP_MILESTONES.length)}%
+                {Math.round(milestones.reduce((s,m) => s + m.progress, 0) / milestones.length)}%
               </div>
               <span className="t-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>across milestones</span>
             </div>
           </div>
           <div>
             <div style={{ display: "flex", gap: 4, height: 28 }}>
-              {ROADMAP_MILESTONES.map(m => (
+              {milestones.map(m => (
                 <div key={m.id} title={`${m.title} — ${m.progress}%`} style={{
                   flex: 1, position: "relative",
                   background: "rgba(148,158,200,0.08)",
@@ -162,13 +168,13 @@ const Roadmap = () => {
               ))}
             </div>
             <div className="t-mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-              <span>{ROADMAP_MILESTONES[0].target}</span>
-              <span>{ROADMAP_MILESTONES[ROADMAP_MILESTONES.length-1].target}</span>
+              <span>{milestones[0].target}</span>
+              <span>{milestones[milestones.length-1].target}</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 14 }}>
             {LANES.map(l => {
-              const n = ROADMAP_MILESTONES.filter(m => m.lane === l.id).length;
+              const n = milestones.filter(m => m.lane === l.id).length;
               return (
                 <div key={l.id} style={{ textAlign: "right" }}>
                   <div className="t-label" style={{ color: l.tone }}>{l.label}</div>
@@ -182,7 +188,7 @@ const Roadmap = () => {
         {/* Kanban-style lanes */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
           {LANES.map(lane => {
-            const items = ROADMAP_MILESTONES.filter(m => m.lane === lane.id);
+            const items = milestones.filter(m => m.lane === lane.id);
             return (
               <div key={lane.id} style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
                 <div style={{

@@ -63,6 +63,11 @@ const DEFAULT_BACKENDS = [
 // =========================================================
 const BackendsCard = () => {
   const [backends, setBackends] = useState(DEFAULT_BACKENDS);
+  useEffect(() => {
+    fetch("/api/config").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d && Array.isArray(d.backends)) setBackends(d.backends);
+    }).catch(() => {});
+  }, []);
   const [revealKey, setRevealKey] = useState({});
   const [probing, setProbing] = useState(false);
   const [probingIds, setProbingIds] = useState(new Set());

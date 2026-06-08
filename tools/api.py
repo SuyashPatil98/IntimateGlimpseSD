@@ -297,6 +297,82 @@ async def flashcards_rate(request: Request):
     return {"status": "ok", "card": res}
 
 
+@app.get("/api/roadmap")
+async def roadmap():
+    loop = asyncio.get_event_loop()
+
+    def build():
+        pages = _concept_pages(vault.collect_pages())
+        agg = {}
+        for p in pages.values():
+            fm = p["frontmatter"]
+            d = agg.setdefault(fm.get("area", "unknown"), {"total": 0, "mature": 0})
+            d["total"] += 1
+            if fm.get("status") in ("mature", "comprehensive"):
+                d["mature"] += 1
+        lanes = {"shipped": [], "current": [], "next": [], "later": []}
+        for a in config.AREAS:
+            d = agg.get(a, {"total": 0, "mature": 0})
+            pct = round(d["mature"] / d["total"] * 100) if d["total"] else 0
+            lane = "shipped" if pct >= 80 else "current" if pct >= 55 else "next" if pct >= 30 else "later"
+            lanes[lane].append((a, pct, d))
+        titles = {"shipped": "Mastered", "current": "Active focus", "next": "Up next", "later": "Long tail"}
+        out = []
+        for lane in ("shipped", "current", "next", "later"):
+            items = lanes[lane]
+            if not items:
+                continue
+            done = sum(d["mature"] for _, _, d in items)
+            planned = sum(d["total"] for _, _, d in items)
+            out.append({
+                "id": lane, "lane": lane, "title": titles[lane],
+                "target": f"{len(items)} areas", "progress": round(done / planned * 100) if planned else 0,
+                "areas": [a for a, _, _ in items], "notesPlanned": planned, "notesDone": done,
+                "cards": [{"kind": "skill", "title": a.replace("-", " ").title(),
+                           "status": "mature" if pct >= 80 else "draft", "todo": pct < 30}
+                          for a, pct, _ in items],
+            })
+        return out
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.get("/api/config")
+async def get_config():
+    h = llm_adapter.health()
+    backends = [
+        {"id": "qwen", "name": "Qwen 8B", "provider": "Ollama (local)", "model": config.QWEN_ASK_MODEL,
+         "endpoint": config.OLLAMA_HOST, "keyMasked": "local (no key)", "enabled": True, "role": "primary",
+         "state": "ok" if h["qwen"] else "down", "latencyMs": None, "lastCheck": "now",
+         "contextWindow": 32768, "costIn": 0, "costOut": 0},
+        {"id": "claude", "name": "Claude Sonnet 4.6", "provider": "Anthropic", "model": config.CLAUDE_PROMOTE_MODEL,
+         "endpoint": "api.anthropic.com", "keyMasked": "sk-ant-…set" if config.ANTHROPIC_API_KEY else "missing",
+         "enabled": bool(config.ANTHROPIC_API_KEY), "role": "primary",
+         "state": "ok" if h["claude"] else "missing", "latencyMs": None, "lastCheck": "now",
+         "contextWindow": 1000000, "costIn": 3.0, "costOut": 15.0},
+        {"id": "gemini", "name": "Gemini 2.5 Flash", "provider": "Google", "model": config.GEMINI_MODEL,
+         "endpoint": "generativelanguage.googleapis.com", "keyMasked": "set" if config.GEMINI_API_KEY else "missing",
+         "enabled": bool(config.GEMINI_API_KEY), "role": "standby",
+         "state": "ok" if h["gemini"] else "missing", "latencyMs": None, "lastCheck": "now",
+         "contextWindow": 1000000, "costIn": 0, "costOut": 0},
+    ]
+    return {"backends": backends,
+            "routing": {"policy": "manual", "ask": list(config.ROLE_ROUTING["ask"]),
+                        "promote": list(config.ROLE_ROUTING["promote"])}}
+
+
+@app.get("/api/ingest/queue")
+async def ingest_queue():
+    import json
+    mf = config.RAW_DIR / "manifest.json"
+    if mf.exists():
+        try:
+            return {"queue": json.loads(mf.read_text(encoding="utf-8"))}
+        except Exception:
+            pass
+    return {"queue": []}
+
+
 @app.post("/api/ask")
 async def ask(request: Request):
     data = await request.json()

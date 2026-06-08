@@ -30,6 +30,11 @@ const STATE_DEFS = {
 // =========================================================
 const Ingest = () => {
   const [queue, setQueue] = useState(INITIAL_QUEUE);
+  useEffect(() => {
+    fetch("/api/ingest/queue").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d && Array.isArray(d.queue)) setQueue(d.queue);
+    }).catch(() => {});
+  }, []);
   const [drag, setDrag] = useState(false);
   const [defaults, setDefaults] = useState({
     area: "databases",
