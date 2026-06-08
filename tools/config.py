@@ -87,8 +87,10 @@ MODEL_FOR = {
 
 
 # ── Retrieval ────────────────────────────────────────────────────────────────
-EMBED_MODEL = os.environ.get("EMBED_MODEL", "BAAI/bge-base-en-v1.5")
-RERANK_MODEL = os.environ.get("RERANK_MODEL", "BAAI/bge-reranker-base")
+# CPU-optimal defaults: fast bi-encoder for recall, fast cross-encoder for precision.
+# Upgrade to bge-base + bge-reranker-base on a GPU box for max quality.
+EMBED_MODEL = os.environ.get("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
+RERANK_MODEL = os.environ.get("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
 RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "20"))   # candidates before rerank
 RETRIEVAL_TOP_N = int(os.environ.get("RETRIEVAL_TOP_N", "6"))    # pages after rerank
 GRAPH_EXPANSION_HOPS = int(os.environ.get("GRAPH_EXPANSION_HOPS", "1"))

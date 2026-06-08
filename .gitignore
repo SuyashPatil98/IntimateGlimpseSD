@@ -39,3 +39,7 @@ tools/anki/*.apkg
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ── design archive + dev logs ──
+*.zip
+course-app/.vite-dev.log
