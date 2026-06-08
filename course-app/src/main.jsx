@@ -2,6 +2,7 @@
 // then the screens (each publishes itself on window), then app.jsx — which
 // self-mounts via ReactDOM.createRoot and references every screen as a global.
 import "./_react-global.js";
+import "./api.js";
 import "./tokens.css";
 import "./shared.jsx";
 import "./dashboard.jsx";

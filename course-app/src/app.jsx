@@ -133,7 +133,20 @@ const CommandPalette = ({ onClose }) => {
 const App = () => {
   const [view, setView] = useState("dashboard");
   const [cmdOpen, setCmdOpen] = useState(false);
-  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [health, setHealth] = useState(MOCK_HEALTH);
+  const [vaultStats, setVaultStats] = useState(MOCK_VAULT_STATS);
+
+  // Live backend health + vault size (top bar), polled every 12s.
+  useEffect(() => {
+    const load = () => {
+      fetch("/api/health").then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (d) { setHealth(d); setVaultStats((v) => ({ ...v, total: d.vault.pages })); }
+      }).catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 12000);
+    return () => clearInterval(id);
+  }, []);
 
   const onStart = (kind) => {
     if (kind === "resume" || kind === "focus" || kind === "new") setView("study");
@@ -147,10 +160,10 @@ const App = () => {
         e.preventDefault(); setCmdOpen((o) => !o);
       }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "p") {
-        e.preventDefault(); setPromoteOpen(true);
+        e.preventDefault(); setView("study");
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "ArrowUp") {
-        e.preventDefault(); setPromoteOpen(true);
+        e.preventDefault(); setView("study");
       }
       // Quick-jump shortcuts
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
@@ -171,12 +184,12 @@ const App = () => {
           view={view}
           onView={setView}
           onOpenCmd={() => setCmdOpen(true)}
-          vaultStats={MOCK_VAULT_STATS}
-          health={MOCK_HEALTH}
+          vaultStats={vaultStats}
+          health={health}
         />
         <div style={{ minHeight: 0, position: "relative" }}>
           {view === "dashboard"  && <Dashboard onStart={onStart} />}
-          {view === "study"      && <Study onPromote={() => setPromoteOpen(true)} />}
+          {view === "study"      && <Study />}
           {view === "vault"      && <Vault />}
           {view === "graph"      && <Graph />}
           {view === "flashcards" && <Flashcards />}
@@ -187,13 +200,6 @@ const App = () => {
       </div>
 
       {cmdOpen && <CommandPalette onClose={() => setCmdOpen(false)} />}
-      {promoteOpen && (
-        <PromoteModal
-          proposal={MOCK_PROMOTE_PROPOSAL}
-          onClose={() => setPromoteOpen(false)}
-          onConfirm={() => setPromoteOpen(false)}
-        />
-      )}
     </>
   );
 };
