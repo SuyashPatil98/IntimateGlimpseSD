@@ -1,11 +1,11 @@
 # SystemDesignAI — Build Handoff (resume here)
 
 **Last updated:** 2026-06-09. This is the continuity doc for the *rebuild* work. A fresh
-session should read, in order: **`claude.md`** (project context) → **this file** (what's
-done / how to run / what's next) → **`opus-master-brief.md`** (the original plan). The full
+session should read, in order: **`../README.md`** → **`../CLAUDE.md`** (project context) → **this file** (what's
+done / how to run / what's next) → **`opus-master-brief.md`** (same folder, the original plan). The full
 implementation plan also lives at `~/.claude/plans/sleepy-brewing-haven.md`.
 
-> Not a remote repo — local git only, branch `main`, 14 commits. Nothing is pushed anywhere.
+> Remote: `origin` → `github.com/SuyashPatil98/IntimateGlimpseSD` (whole-repo backup, "option 1"). Branch `main`.
 > The task list (TaskCreate) does NOT persist across sessions — the milestone status below is
 > the source of truth.
 
@@ -93,7 +93,7 @@ Quick checks without the UI:
 - `src/api.js` (`window.API`) — fetch + SSE client. `src/tokens.css` — the design system.
 - Screens: `dashboard/study/vault/graph/flashcards/roadmap/ingest/profile.jsx`. Each was wired
   by adding a `fetch` + state (or, for the dashboard, overwriting the `MOCK_*` globals in
-  `app.jsx` and re-rendering). **The original design source is archived in `SystemDesignAI ui/`
+  `app.jsx` and re-rendering). **The original design source is archived in `design-archive/`
   (incl. `design.md`, the UI↔backend contract).**
 
 ---

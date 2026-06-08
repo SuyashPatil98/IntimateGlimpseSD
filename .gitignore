@@ -43,3 +43,6 @@ desktop.ini
 # ── design archive + dev logs ──
 *.zip
 course-app/.vite-dev.log
+
+# ── Log files ──
+*.log
