@@ -67,10 +67,16 @@ const Vault = () => {
   const [statuses, setStatuses] = useState(new Set());  // empty = all
   const [sort, setSort] = useState("recent");
   const [layout, setLayout] = useState("grid");         // grid | list
+  const [notes, setNotes] = useState(VAULT_NOTES);
+  React.useEffect(() => {
+    fetch("/api/vault/notes").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (Array.isArray(d) && d.length) setNotes(d);
+    }).catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    let res = VAULT_NOTES.filter(n => {
+    let res = notes.filter(n => {
       if (areas.size && !areas.has(n.area)) return false;
       if (statuses.size && !statuses.has(n.status)) return false;
       if (ql && !(n.title.toLowerCase().includes(ql) || n.page.toLowerCase().includes(ql) || n.snippet.toLowerCase().includes(ql))) return false;
@@ -83,14 +89,14 @@ const Vault = () => {
     res = [...res].sort((a, b) => (score(a) < score(b) ? -1 : 1));
     if (sort !== "title") res = res.reverse();
     return res;
-  }, [q, areas, statuses, sort]);
+  }, [q, areas, statuses, sort, notes]);
 
   const totals = useMemo(() => ({
-    stub: VAULT_NOTES.filter(n => n.status === "stub").length,
-    draft: VAULT_NOTES.filter(n => n.status === "draft").length,
-    mature: VAULT_NOTES.filter(n => n.status === "mature").length,
-    comprehensive: VAULT_NOTES.filter(n => n.status === "comprehensive").length,
-  }), []);
+    stub: notes.filter(n => n.status === "stub").length,
+    draft: notes.filter(n => n.status === "draft").length,
+    mature: notes.filter(n => n.status === "mature").length,
+    comprehensive: notes.filter(n => n.status === "comprehensive").length,
+  }), [notes]);
 
   const toggleSet = (setter, val) => setter(s => {
     const n = new Set(s);
@@ -113,7 +119,7 @@ const Vault = () => {
               Vault
             </h1>
             <span className="t-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>
-              <b style={{ color: "var(--text-hi)" }}>{filtered.length}</b> of {VAULT_NOTES.length} shown
+              <b style={{ color: "var(--text-hi)" }}>{filtered.length}</b> of {notes.length} shown
               <span style={{ color: "var(--text-faint)", margin: "0 6px" }}>·</span>
               <span className="t-amber">{totals.stub} stub</span> ·
               <span style={{ color: "var(--neon-amber)", marginLeft: 4 }}>{totals.draft} draft</span> ·
