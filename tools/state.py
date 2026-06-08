@@ -96,6 +96,16 @@ class TokenUsage(SQLModel, table=True):
     created_at: dt.datetime = Field(default_factory=now)
 
 
+class Promotion(SQLModel, table=True):
+    """A page created/extended via the compiler — drives recent-promoted + stats."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    page: str = ""
+    title: str = ""
+    area: str = ""
+    decision: str = ""              # CREATE | EXTEND
+    created_at: dt.datetime = Field(default_factory=now)
+
+
 _engine = None
 
 
@@ -142,6 +152,12 @@ def record_usage(backend, model, role, input_tokens, output_tokens,
             cache_write_tokens=cache_write_tokens, cache_read_tokens=cache_read_tokens,
             cost_usd=cost_usd,
         ))
+        s.commit()
+
+
+def record_promotion(page, title, area, decision):
+    with db() as s:
+        s.add(Promotion(page=page, title=title, area=area, decision=decision))
         s.commit()
 
 

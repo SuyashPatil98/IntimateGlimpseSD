@@ -138,6 +138,14 @@ def _links_in(text: str) -> list[str]:
             for m in re.findall(r"\[\[([^\[\]]+?)\]\]", text)]
 
 
+def _record_promo(page, title, area, decision):
+    try:
+        import state
+        state.record_promotion(page, title, area, decision)
+    except Exception:
+        pass
+
+
 def apply_decision(d: dict) -> dict:
     """Validate + write + run the pipeline. Returns a result dict."""
     blocking, warnings = validate_decision(d)
@@ -152,6 +160,7 @@ def apply_decision(d: dict) -> dict:
     if dec == "CREATE":
         title, area = d["title"], d["area"]
         vault_write.write_new_page(title, area, d["content"])
+        _record_promo(title, title, area, "CREATE")
         pipe = pipeline.post_vault_write(
             [title], new_page=title, area=area,
             wikilinks=d.get("wikilinks") or _links_in(d["content"]), operation="create")
@@ -164,6 +173,8 @@ def apply_decision(d: dict) -> dict:
     canon = resolver[str(d["target_title"]).lower()]
     path = pages[canon]["path"]
     vault_write.apply_merge(path, d["target_section"], d["merge_strategy"], d["new_content"])
+    _record_promo(canon, pages[canon]["frontmatter"].get("title", canon),
+                  pages[canon]["frontmatter"].get("area", "unknown"), "EXTEND")
     pipe = pipeline.post_vault_write(
         [canon], new_page=canon, wikilinks=_links_in(d["new_content"]), operation="extend")
     return {"applied": True, "decision": "EXTEND", "target": canon,

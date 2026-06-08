@@ -151,6 +151,152 @@ async def usage():
     }
 
 
+def _concept_pages(pages):
+    return {n: p for n, p in pages.items() if not p["is_meta"]}
+
+
+@app.get("/api/graph")
+async def graph():
+    loop = asyncio.get_event_loop()
+
+    def build():
+        pages = vault.collect_pages()
+        resolver = vault.build_resolver(pages)
+        concept = _concept_pages(pages)
+        inbound, edges = {}, []
+        for name, p in concept.items():
+            for link in p["wikilinks"]:
+                c = resolver.get(link.lower())
+                if c and c in concept and c != name:
+                    edges.append([name, c])
+                    inbound[c] = inbound.get(c, 0) + 1
+        nodes = [{"id": n, "title": p["frontmatter"].get("title", n),
+                  "area": p["frontmatter"].get("area", "unknown"),
+                  "status": p["frontmatter"].get("status", "stub"),
+                  "inbound": inbound.get(n, 0)} for n, p in concept.items()]
+        return {"nodes": nodes, "edges": edges}
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.get("/api/areas/coverage")
+async def areas_coverage():
+    loop = asyncio.get_event_loop()
+
+    def build():
+        pages = _concept_pages(vault.collect_pages())
+        agg = {}
+        for p in pages.values():
+            fm = p["frontmatter"]
+            d = agg.setdefault(fm.get("area", "unknown"), {"total": 0, "mature": 0})
+            d["total"] += 1
+            if fm.get("status") in ("mature", "comprehensive"):
+                d["mature"] += 1
+        out = []
+        for a in config.AREAS:
+            d = agg.get(a, {"total": 0, "mature": 0})
+            pct = round(d["mature"] / d["total"] * 100) if d["total"] else 0
+            out.append({"area": a, "pct": pct, "total": d["total"], "mature": d["mature"]})
+        return out
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.get("/api/vault/stats")
+async def vault_stats():
+    import datetime as dt
+    from sqlmodel import select
+    loop = asyncio.get_event_loop()
+
+    def counts():
+        pages = _concept_pages(vault.collect_pages())
+        mature = sum(1 for p in pages.values()
+                     if p["frontmatter"].get("status") in ("mature", "comprehensive"))
+        return len(pages), mature
+
+    total, mature = await loop.run_in_executor(None, counts)
+    now = state.now()
+    today0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week0 = now - dt.timedelta(days=7)
+
+    def _aware(d):
+        return d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)
+
+    with state.db() as s:
+        proms = list(s.exec(select(state.Promotion)))
+    return {
+        "total": total, "mature": mature,
+        "promotedToday": sum(1 for p in proms if _aware(p.created_at) >= today0),
+        "promotedWeek": sum(1 for p in proms if _aware(p.created_at) >= week0),
+        "lintWarnings": 0, "lintBroken": 0,
+        "streakDays": int(state.get_progress("streak", "0") or 0),
+    }
+
+
+@app.get("/api/vault/recent-promoted")
+async def recent_promoted(n: int = 5):
+    from sqlmodel import select
+    with state.db() as s:
+        rows = list(s.exec(select(state.Promotion).order_by(state.Promotion.id.desc())))[:n]
+    return [{"page": r.page, "title": r.title, "area": r.area, "status": "draft",
+             "decision": r.decision, "when": r.created_at.isoformat()} for r in rows]
+
+
+@app.get("/api/vault/notes")
+async def vault_notes(q: str = "", area: str = "", status: str = "", limit: int = 400):
+    loop = asyncio.get_event_loop()
+
+    def build():
+        pages = _concept_pages(vault.collect_pages())
+        resolver = vault.build_resolver(pages)
+        inbound = {}
+        for n, p in pages.items():
+            for link in p["wikilinks"]:
+                c = resolver.get(link.lower())
+                if c and c in pages:
+                    inbound[c] = inbound.get(c, 0) + 1
+        out = []
+        for n, p in pages.items():
+            fm = p["frontmatter"]
+            if area and fm.get("area") != area:
+                continue
+            if status and fm.get("status") != status:
+                continue
+            body = p["body"]
+            out.append({"page": n, "title": fm.get("title", n),
+                        "area": fm.get("area", "unknown"), "status": fm.get("status", "stub"),
+                        "inbound": inbound.get(n, 0), "words": len(body.split()),
+                        "modified": str(fm.get("last_reviewed", "")),
+                        "snippet": body.strip()[:140]})
+        if q:
+            ql = q.lower()
+            out = [o for o in out if ql in o["title"].lower() or ql in o["snippet"].lower()]
+        out.sort(key=lambda o: -o["inbound"])
+        return out[:limit]
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.get("/api/flashcards/due")
+async def flashcards_due(limit: int = 60):
+    import flashcards as fc
+    loop = asyncio.get_event_loop()
+    cards = await loop.run_in_executor(None, lambda: fc.due_cards(limit))
+    return {"cards": [{"id": c.id, "page": c.page, "area": c.area, "question": c.question,
+                       "answer": c.answer, "deepExplanation": None,
+                       "due": c.due.isoformat(), "ease": round(c.ease, 2)} for c in cards]}
+
+
+@app.post("/api/flashcards/rate")
+async def flashcards_rate(request: Request):
+    data = await request.json()
+    import flashcards as fc
+    loop = asyncio.get_event_loop()
+    res = await loop.run_in_executor(
+        None, lambda: fc.rate(data.get("cardId") or data.get("id"), data.get("rating", "good")))
+    return {"status": "ok", "card": res}
+
+
 @app.post("/api/ask")
 async def ask(request: Request):
     data = await request.json()
