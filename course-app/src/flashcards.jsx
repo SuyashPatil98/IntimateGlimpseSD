@@ -63,8 +63,15 @@ const Flashcards = () => {
   const [revealed, setRevealed] = useState(false);
   const [deepOpen, setDeepOpen] = useState(false);
   const [reviewed, setReviewed] = useState({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
+  const [deck, setDeck] = useState(FLASHCARD_DECK);
 
-  const card = FLASHCARD_DECK[idx % FLASHCARD_DECK.length];
+  useEffect(() => {
+    fetch("/api/flashcards/due?limit=60").then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d && Array.isArray(d.cards) && d.cards.length) setDeck(d.cards);
+    }).catch(() => {});
+  }, []);
+
+  const card = deck[idx % Math.max(1, deck.length)];
 
   useEffect(() => {
     const h = (e) => {
@@ -84,13 +91,14 @@ const Flashcards = () => {
   }, [revealed, idx]);
 
   const rate = (label) => {
+    if (card && card.id != null && window.API) API.post("/api/flashcards/rate", { cardId: card.id, rating: label });
     setReviewed(r => ({ ...r, [label]: r[label] + 1 }));
     setRevealed(false);
     setDeepOpen(false);
     setIdx(i => i + 1);
   };
 
-  const total = FLASHCARD_DECK.length;
+  const total = deck.length;
   const done  = Object.values(reviewed).reduce((s,n)=>s+n,0);
 
   return (
