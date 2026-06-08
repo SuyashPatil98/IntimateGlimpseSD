@@ -145,8 +145,23 @@ class ClaudeBackend:
             ) as s:
                 for text in s.text_stream:
                     yield text
+                self._record_usage(model, s.get_final_message())
         except Exception as exc:  # anthropic.APIError etc.
             raise LLMAdapterError(f"Claude error: {exc}") from exc
+
+    @staticmethod
+    def _record_usage(model, final):
+        """Persist token usage + cost for this call (never breaks generation)."""
+        try:
+            import state
+            u = final.usage
+            cw = getattr(u, "cache_creation_input_tokens", 0) or 0
+            cr = getattr(u, "cache_read_input_tokens", 0) or 0
+            cost = config.cost_usd(model, u.input_tokens, u.output_tokens, cw, cr)
+            role = "promote" if "sonnet" in model else "ask" if "haiku" in model else ""
+            state.record_usage("claude", model, role, u.input_tokens, u.output_tokens, cw, cr, cost)
+        except Exception:
+            pass
 
 
 class GeminiBackend:

@@ -82,6 +82,20 @@ class Progress(SQLModel, table=True):
     updated_at: dt.datetime = Field(default_factory=now)
 
 
+class TokenUsage(SQLModel, table=True):
+    """One paid LLM call's token usage + computed cost (Claude spend tracking)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    backend: str = ""
+    model: str = ""
+    role: str = ""                  # "promote" | "ask"
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_write_tokens: int = 0
+    cache_read_tokens: int = 0
+    cost_usd: float = 0.0
+    created_at: dt.datetime = Field(default_factory=now)
+
+
 _engine = None
 
 
@@ -116,6 +130,18 @@ def set_progress(key: str, value: str) -> None:
         else:
             row = Progress(key=key, value=value)
         s.add(row)
+        s.commit()
+
+
+def record_usage(backend, model, role, input_tokens, output_tokens,
+                 cache_write_tokens=0, cache_read_tokens=0, cost_usd=0.0):
+    with db() as s:
+        s.add(TokenUsage(
+            backend=backend, model=model, role=role,
+            input_tokens=input_tokens, output_tokens=output_tokens,
+            cache_write_tokens=cache_write_tokens, cache_read_tokens=cache_read_tokens,
+            cost_usd=cost_usd,
+        ))
         s.commit()
 
 

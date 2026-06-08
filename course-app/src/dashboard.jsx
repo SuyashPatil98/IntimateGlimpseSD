@@ -299,6 +299,45 @@ const KpiTile = ({ label, val, sub, tone }) => (
 );
 
 // =========================================================
+// CLAUDE SPEND — live from /api/usage (real Claude token cost)
+// =========================================================
+const _fmtTok = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n || 0));
+
+const MicroSpend = ({ label, val, tone }) => (
+  <div style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, background: "rgba(148,158,200,0.025)" }}>
+    <div className="t-label">{label}</div>
+    <div className="t-mono t-num" style={{ fontSize: 15, marginTop: 3, color: tone === "accent" ? "var(--accent-hi)" : "var(--text-hi)" }}>{val}</div>
+  </div>
+);
+
+const ClaudeSpendCard = () => {
+  const [u, setU] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    fetch("/api/usage").then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setU(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const today = (u && u.today) || { cost: 0, calls: 0, input: 0, output: 0 };
+  const total = (u && u.total) || { cost: 0 };
+  return (
+    <Card title="Claude spend" glyph={<I.Bolt size={12} />}
+      right={<span className="t-mono t-faint" style={{ fontSize: 10 }}>SONNET · COMPILE</span>}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+        <div className="t-mono t-num" style={{ fontSize: 30, color: "var(--accent-hi)", lineHeight: 1, letterSpacing: "-0.02em" }}>
+          ${today.cost.toFixed(2)}
+        </div>
+        <div className="t-label">TODAY · {today.calls} CALLS</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--border)" }}>
+        <MicroSpend label="TOKENS IN / OUT" val={`${_fmtTok(today.input)} / ${_fmtTok(today.output)}`} />
+        <MicroSpend label="LIFETIME" val={`$${total.cost.toFixed(2)}`} tone="accent" />
+      </div>
+    </Card>
+  );
+};
+
+// =========================================================
 // DASHBOARD — root
 // =========================================================
 const Dashboard = ({ onStart }) => (
@@ -332,6 +371,7 @@ const Dashboard = ({ onStart }) => (
     {/* Row 1 — three columns */}
     <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
       <SessionCard />
+      <ClaudeSpendCard />
       <RecentPromotedCard />
     </div>
     <div style={{ minWidth: 0 }}>

@@ -85,6 +85,22 @@ MODEL_FOR = {
     ("claude", "promote"): CLAUDE_PROMOTE_MODEL,
 }
 
+# ── Claude pricing ($ per 1M tokens) — for usage/cost tracking ────────────────
+# Sonnet 4.6: in $3 / out $15; cache write 1.25x input, cache read 0.1x input.
+MODEL_PRICES = {
+    "claude-sonnet-4-6":         {"in": 3.0, "out": 15.0, "cache_write": 3.75, "cache_read": 0.30},
+    "claude-haiku-4-5":          {"in": 1.0, "out": 5.0,  "cache_write": 1.25, "cache_read": 0.10},
+    "claude-haiku-4-5-20251001": {"in": 1.0, "out": 5.0,  "cache_write": 1.25, "cache_read": 0.10},
+}
+_DEFAULT_PRICE = {"in": 3.0, "out": 15.0, "cache_write": 3.75, "cache_read": 0.30}
+
+
+def cost_usd(model, input_tokens, output_tokens, cache_write_tokens=0, cache_read_tokens=0):
+    p = MODEL_PRICES.get(model, _DEFAULT_PRICE)
+    return (input_tokens * p["in"] + output_tokens * p["out"]
+            + cache_write_tokens * p["cache_write"]
+            + cache_read_tokens * p["cache_read"]) / 1_000_000
+
 
 # ── Retrieval ────────────────────────────────────────────────────────────────
 # CPU-optimal defaults: fast bi-encoder for recall, fast cross-encoder for precision.

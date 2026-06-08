@@ -114,6 +114,43 @@ async def health():
     return {"backends": llm_adapter.health(), "vault": {"pages": n}}
 
 
+@app.get("/api/usage")
+async def usage():
+    """Claude token spend — today / week / total / per-model — for the dashboard."""
+    import datetime as dt
+    from sqlmodel import select
+    now = state.now()
+    today0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week0 = now - dt.timedelta(days=7)
+
+    def _aware(d):
+        return d if d.tzinfo else d.replace(tzinfo=dt.timezone.utc)
+
+    def agg(rows):
+        return {
+            "calls": len(rows),
+            "input": sum(r.input_tokens for r in rows),
+            "output": sum(r.output_tokens for r in rows),
+            "cache_read": sum(r.cache_read_tokens for r in rows),
+            "cache_write": sum(r.cache_write_tokens for r in rows),
+            "cost": round(sum(r.cost_usd for r in rows), 4),
+        }
+
+    with state.db() as s:
+        rows = list(s.exec(select(state.TokenUsage)))
+    by_model: dict = {}
+    for r in rows:
+        m = by_model.setdefault(r.model, {"calls": 0, "cost": 0.0})
+        m["calls"] += 1
+        m["cost"] = round(m["cost"] + r.cost_usd, 4)
+    return {
+        "today": agg([r for r in rows if _aware(r.created_at) >= today0]),
+        "week": agg([r for r in rows if _aware(r.created_at) >= week0]),
+        "total": agg(rows),
+        "by_model": by_model,
+    }
+
+
 @app.post("/api/ask")
 async def ask(request: Request):
     data = await request.json()
