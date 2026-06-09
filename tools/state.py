@@ -106,6 +106,26 @@ class Promotion(SQLModel, table=True):
     created_at: dt.datetime = Field(default_factory=now)
 
 
+class ReviewItem(SQLModel, table=True):
+    """A proposed vault change awaiting human approval — the review queue.
+
+    Fed by three sources (kind): 'ingest' (a dropped PDF), 'gap' (a planned page
+    that doesn't exist), 'status-fill' (a mature page missing a required section).
+    Lifecycle: suggested → (draft) → pending → applied | rejected.
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    kind: str = ""                  # ingest | gap | status-fill
+    source: str = ""                # filename / "audit" / topic
+    title: str = ""                 # page name or topic (display)
+    area: str = ""
+    decision: str = ""              # CREATE | EXTEND | SKIP | "" (not drafted yet)
+    summary: str = ""               # short "what / why"
+    payload: str = ""               # JSON of the full compiler proposal (empty until drafted)
+    status: str = "suggested"       # suggested | drafting | pending | applied | rejected | error
+    created_at: dt.datetime = Field(default_factory=now)
+    decided_at: Optional[dt.datetime] = None
+
+
 _engine = None
 
 
@@ -159,6 +179,64 @@ def record_promotion(page, title, area, decision):
     with db() as s:
         s.add(Promotion(page=page, title=title, area=area, decision=decision))
         s.commit()
+
+
+# ── Review queue ─────────────────────────────────────────────────────────────
+def add_review_item(*, kind, title, area="", source="", decision="", summary="",
+                    payload="", status="suggested", dedupe=True) -> int:
+    """Insert a review item. If dedupe, skip when a non-terminal item with the same
+    kind+title already exists (avoids re-queuing the same gap each audit)."""
+    from sqlmodel import select
+    with db() as s:
+        if dedupe:
+            existing = s.exec(
+                select(ReviewItem).where(ReviewItem.kind == kind, ReviewItem.title == title,
+                                         ReviewItem.status.in_(("suggested", "pending", "drafting")))
+            ).first()
+            if existing:
+                return existing.id
+        item = ReviewItem(kind=kind, title=title, area=area, source=source,
+                          decision=decision, summary=summary, payload=payload, status=status)
+        s.add(item)
+        s.commit()
+        s.refresh(item)
+        return item.id
+
+
+def list_review(status: str | None = None, limit: int = 200) -> list[ReviewItem]:
+    from sqlmodel import select
+    with db() as s:
+        q = select(ReviewItem).order_by(ReviewItem.id.desc())
+        if status:
+            q = q.where(ReviewItem.status == status)
+        return list(s.exec(q))[:limit]
+
+
+def get_review(item_id: int) -> Optional["ReviewItem"]:
+    with db() as s:
+        return s.get(ReviewItem, item_id)
+
+
+def update_review(item_id: int, **fields) -> None:
+    with db() as s:
+        item = s.get(ReviewItem, item_id)
+        if not item:
+            return
+        for k, v in fields.items():
+            setattr(item, k, v)
+        if fields.get("status") in ("applied", "rejected"):
+            item.decided_at = now()
+        s.add(item)
+        s.commit()
+
+
+def review_counts() -> dict:
+    from sqlmodel import select
+    out = {"suggested": 0, "pending": 0, "applied": 0, "rejected": 0, "drafting": 0, "error": 0}
+    with db() as s:
+        for it in s.exec(select(ReviewItem)):
+            out[it.status] = out.get(it.status, 0) + 1
+    return out
 
 
 if __name__ == "__main__":

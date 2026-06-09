@@ -333,6 +333,134 @@ async def vault_autosync(request: Request):
     return {"enabled": enabled}
 
 
+# ── Review queue (self-maintaining loop: ingest + audit feed it) ──────────────
+def _drafted_proposal(it):
+    """Return the compiler proposal only if the item has been drafted (has a decision)."""
+    if not it.payload:
+        return None
+    try:
+        d = json.loads(it.payload)
+        return d if isinstance(d, dict) and d.get("decision") else None
+    except Exception:
+        return None
+
+
+@app.get("/api/review/queue")
+async def review_queue():
+    loop = asyncio.get_event_loop()
+
+    def build():
+        items = state.list_review()
+        return {"counts": state.review_counts(),
+                "items": [{"id": it.id, "kind": it.kind, "title": it.title, "area": it.area,
+                           "source": it.source, "decision": it.decision, "summary": it.summary,
+                           "status": it.status, "payload": _drafted_proposal(it),
+                           "created": it.created_at.isoformat()} for it in items]}
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.post("/api/review/run-audit")
+async def review_run_audit():
+    """Scan the vault for gaps + status-fills, enqueue them as suggestions."""
+    import audit
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, audit.run_audit)
+
+
+@app.post("/api/review/{item_id}/draft")
+async def review_draft(item_id: int):
+    """Generate the proposal for a suggested item via the Claude compiler."""
+    loop = asyncio.get_event_loop()
+    item = await loop.run_in_executor(None, lambda: state.get_review(item_id))
+    if not item:
+        return JSONResponse({"status": "error", "message": "not found"}, status_code=404)
+    existing = _drafted_proposal(item)
+    if existing:
+        return {"status": "ok", "proposal": existing}
+    state.update_review(item_id, status="drafting")
+    if item.kind == "status-fill":
+        missing = item.summary.replace("missing: ", "")
+        convo = (f"The existing vault page '{item.title}' is missing its '{missing}' "
+                 f"section(s). Draft thorough, accurate content to add (decision: EXTEND).")
+    elif item.kind == "ingest":
+        src = ""
+        try:
+            src = json.loads(item.payload).get("source_text", "")
+        except Exception:
+            pass
+        convo = ("Compile this source material into a vault-quality page, deciding "
+                 f"CREATE / EXTEND / SKIP against the existing vault:\n\n{src}")
+    else:  # gap
+        convo = (f"Write a comprehensive, vault-quality page on the system-design concept "
+                 f"'{item.title}' (area: {item.area}). Decision: CREATE.")
+    try:
+        async with _llm_sem:
+            proposal = await loop.run_in_executor(None, lambda: compiler.compile_conversation(convo))
+        blocking, warnings = compiler.validate_decision(proposal)
+        state.update_review(item_id, payload=json.dumps(proposal),
+                            decision=proposal.get("decision", ""), status="pending")
+        return {"status": "ok", "proposal": proposal, "blocking": blocking, "warnings": warnings}
+    except Exception as e:
+        state.update_review(item_id, status="error", summary=f"draft failed: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/review/{item_id}/approve")
+async def review_approve(item_id: int, request: Request):
+    loop = asyncio.get_event_loop()
+    item = await loop.run_in_executor(None, lambda: state.get_review(item_id))
+    if not item or not item.payload:
+        return JSONResponse({"status": "error", "message": "no drafted proposal yet"}, status_code=400)
+    proposal = json.loads(item.payload)
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    edited = data.get("content")
+    if edited is not None:
+        proposal["content" if proposal.get("decision") == "CREATE" else "new_content"] = edited
+    try:
+        result = await loop.run_in_executor(None, lambda: compiler.apply_decision(proposal))
+        if result.get("applied"):
+            state.update_review(item_id, status="applied")
+        return {"status": "ok", "result": result}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/review/{item_id}/reject")
+async def review_reject(item_id: int):
+    state.update_review(item_id, status="rejected")
+    return {"status": "ok"}
+
+
+@app.post("/api/ingest")
+async def ingest(request: Request):
+    """Ingest one raw file (or all of raw/) → enqueue proposals for review."""
+    import ingest as ingest_mod
+    data = {}
+    try:
+        data = await request.json()
+    except Exception:
+        pass
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: ingest_mod.ingest_path(data.get("filename")))
+
+
+@app.post("/api/ingest/upload")
+async def ingest_upload(request: Request):
+    """Drag-drop upload: raw bytes in the body, filename in X-Filename header.
+    Saves to raw/ then ingests it (no multipart dependency)."""
+    import ingest as ingest_mod
+    filename = Path(request.headers.get("X-Filename", "upload.pdf")).name
+    body = await request.body()
+    config.RAW_DIR.mkdir(parents=True, exist_ok=True)
+    (config.RAW_DIR / filename).write_bytes(body)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: ingest_mod.ingest_path(filename))
+
+
 @app.get("/api/flashcards/due")
 async def flashcards_due(limit: int = 60):
     import flashcards as fc
