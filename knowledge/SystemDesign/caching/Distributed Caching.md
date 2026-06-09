@@ -4,7 +4,7 @@ area: caching
 status: mature
 difficulty: intermediate
 prerequisites: ["[[Caching]]", "[[Consistent Hashing]]"]
-related: ["[[Caching]]", "[[Cache Strategies]]", "[[Consistent Hashing]]", "[[Key-Value Store]]"]
+related: ["[[Caching]]", "[[Cache Strategies]]", "[[Consistent Hashing]]", "[[Key-Value Store]]", "[[LRU]]"]
 sources:
   - SDI vol 1, Ch. 4
   - Redis / Memcached docs
@@ -99,7 +99,9 @@ Many kitchens (services) shouldn't each maintain their own pantry. One shared wa
 
 ## Related Concepts
 
+
 - [[Caching]] · [[Cache Strategies]] · [[Eviction Policies]] · [[Consistent Hashing]] · [[Key-Value Store]]
+- [[LRU]] — related concept.
 
 ## Misconceptions
 

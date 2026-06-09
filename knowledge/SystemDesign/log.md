@@ -19,6 +19,10 @@ Each entry follows the format:
 
 ---
 
+## 2026-06-10 — Create — LRU
+- Action: written
+- Lint: ok
+
 ## 2026-06-04 — Lint #1 — Week 1 mechanical pass
 
 First full vault lint per [[schema]] §6.3, automated via `tools/lint.py` (PyYAML-based; runs in ~1 s; full report at `tools/lint-report-20260604.md`).

@@ -1,7 +1,7 @@
 ---
 type: meta
 subtype: index
-last_updated: 2026-06-09
+last_updated: 2026-06-10
 generated_by: tools/build_index.py
 ---
 
@@ -9,7 +9,7 @@ generated_by: tools/build_index.py
 
 A unified knowledge base on system design, distilled from canonical sources. Organized by **concept**, never by book or author.
 
-**293 concept pages** across 14 areas · 287 mature+ (98%).
+**294 concept pages** across 14 areas · 287 mature+ (98%).
 
 > Auto-generated from the live vault — do not hand-edit. Rebuild with `tools/build_index.py`.
 
@@ -63,9 +63,9 @@ Asynchronous communication, decoupling.
 
 Trading consistency for latency, deliberately.
 
-**7 pages** · 7 mature+
+**8 pages** · 7 mature+
 
-● [[Cache Invalidation]] · ● [[Cache Stampede]] · ● [[Cache Strategies]] · ● [[Caching]] · ● [[CDN Caching]] · ● [[Distributed Caching]] · ● [[Eviction Policies]]
+● [[Cache Invalidation]] · ● [[Cache Stampede]] · ● [[Cache Strategies]] · ● [[Caching]] · ● [[CDN Caching]] · ● [[Distributed Caching]] · ● [[Eviction Policies]] · ○ [[LRU]]
 
 ### Reliability · `reliability/`
 
@@ -133,4 +133,4 @@ End-to-end analyses of real-world systems.
 
 ---
 
-_Regenerated 2026-06-09 from 293 live vault pages._
+_Regenerated 2026-06-10 from 294 live vault pages._

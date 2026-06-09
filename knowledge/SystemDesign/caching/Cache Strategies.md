@@ -4,7 +4,7 @@ area: caching
 status: mature
 difficulty: intermediate
 prerequisites: ["[[Caching]]"]
-related: ["[[Caching]]", "[[Cache Invalidation]]", "[[Cache Stampede]]"]
+related: ["[[Caching]]", "[[Cache Invalidation]]", "[[Cache Stampede]]", "[[LRU]]"]
 sources:
   - SDI vol 1
   - system-design-primer
@@ -135,7 +135,9 @@ The cache sits between the application and origin store. *How* data moves betwee
 
 ## Related Concepts
 
+
 - [[Caching]] · [[Cache Invalidation]] · [[Cache Stampede]]
+- [[LRU]] — related concept.
 
 ## Misconceptions
 

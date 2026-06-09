@@ -4,7 +4,7 @@ area: case-studies
 status: mature
 difficulty: intermediate
 prerequisites: ["[[Caching]]", "[[Distributed Caching]]"]
-related: ["[[Redis]]", "[[Consistent Hashing]]"]
+related: ["[[Redis]]", "[[Consistent Hashing]]", "[[LRU]]"]
 builds_toward: []
 sources:
   - Brad Fitzpatrick (LiveJournal) original
@@ -94,11 +94,13 @@ Pick Memcached when you want pure cache and multi-threaded per-node throughput; 
 
 ## Related Concepts
 
+
 - [[Caching]] — overarching concept.
 - [[Distributed Caching]] — architecture pattern.
 - [[Consistent Hashing]] — client sharding.
 - [[Cache Stampede]] — what leases solve.
 - [[Redis]] — alternative.
+- [[LRU]] — related concept.
 
 ## Active Recall Questions
 

@@ -4,7 +4,7 @@ area: caching
 status: mature
 difficulty: intermediate
 prerequisites: ["[[Caching]]"]
-related: ["[[Caching]]", "[[Cache Strategies]]"]
+related: ["[[Caching]]", "[[Cache Strategies]]", "[[LRU]]"]
 sources:
   - SDI vol 1
   - Redis docs
@@ -112,7 +112,9 @@ Tracks last K accesses; evicts based on Kth-most-recent.
 
 ## Related Concepts
 
+
 - [[Caching]] · [[Cache Strategies]]
+- [[LRU]] — related concept.
 
 ## Misconceptions
 

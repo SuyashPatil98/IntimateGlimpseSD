@@ -4,7 +4,7 @@ area: caching
 status: mature
 difficulty: beginner
 prerequisites: []
-related: ["[[Cache Strategies]]", "[[Eviction Policies]]", "[[CDN Caching]]", "[[Distributed Caching]]", "[[Cache Stampede]]", "[[Cache Invalidation]]"]
+related: ["[[Cache Strategies]]", "[[Eviction Policies]]", "[[CDN Caching]]", "[[Distributed Caching]]", "[[Cache Stampede]]", "[[Cache Invalidation]]", "[[LRU]]"]
 builds_toward: ["[[Cache Strategies]]", "[[Distributed Caching]]"]
 sources:
   - SDI vol 1, Ch. 1
@@ -97,7 +97,9 @@ Each layer is faster + smaller than the next.
 
 ## Related Concepts
 
+
 - [[Cache Strategies]] · [[Eviction Policies]] · [[CDN Caching]] · [[Distributed Caching]] · [[Cache Stampede]] · [[Cache Invalidation]]
+- [[LRU]] — related concept.
 
 ## Misconceptions
 

@@ -4,7 +4,7 @@ area: caching
 status: mature
 difficulty: intermediate
 prerequisites: ["[[Caching]]"]
-related: ["[[Caching]]", "[[Cache Strategies]]", "[[Rate Limiting]]"]
+related: ["[[Caching]]", "[[Cache Strategies]]", "[[Rate Limiting]]", "[[LRU]]"]
 sources:
   - SDI vol 1
   - Industry blog posts
@@ -114,7 +114,9 @@ Formula: refresh if `now − last_fetch > TTL × (1 − beta × ln(rand))` where
 
 ## Related Concepts
 
+
 - [[Caching]] · [[Cache Strategies]] · [[Hot Partitions]] · [[Rate Limiting]] · [[Circuit Breakers]]
+- [[LRU]] — related concept.
 
 ## Misconceptions
 
