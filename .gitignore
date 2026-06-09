@@ -49,3 +49,6 @@ course-app/.vite-dev.log
 
 # Accidental duplicate of the vault (kept on disk, never tracked)
 /Knowledge Base/
+
+# runtime ingest tracking (per-machine)
+raw/manifest.json

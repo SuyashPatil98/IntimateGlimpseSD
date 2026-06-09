@@ -1,13 +1,14 @@
 <#
   run.ps1 - start (or check) the SystemDesignAI stack on Windows.
 
-    .\run.ps1            start Ollama (if needed) + backend + frontend, open the UI
+    .\run.ps1            start Ollama + backend + frontend + watcher, open the UI
     .\run.ps1 -Status    just print what is UP / DOWN, do not start anything
 
-  Three processes make up the app:
-    - Ollama daemon  :11434   serves qwen3:8b (free local chat)
+  Four processes make up the app (all started by this script):
+    - Ollama daemon  :11434   serves qwen3:4b (free local chat)
     - Backend API    :8000    FastAPI - retrieval, LLM routing, vault, flashcards
     - Frontend UI    :3000    Vite/React cockpit (proxies /api to :8000)
+    - raw/ watcher            auto-ingests dropped PDFs/markdown into the review queue
 #>
 param([switch]$Status)
 
@@ -32,12 +33,18 @@ function Show-Status {
   $oll = Test-Url "http://localhost:11434/api/tags"
   $qwen = $false
   if ($oll) {
-    try { $qwen = ((Invoke-WebRequest "http://localhost:11434/api/tags" -UseBasicParsing).Content -match "qwen3:8b") } catch {}
+    try { $qwen = ((Invoke-WebRequest "http://localhost:11434/api/tags" -UseBasicParsing).Content -match "qwen3:4b") } catch {}
   }
+  $watcher = $false
+  try {
+    $watcher = [bool](Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
+                      Where-Object { $_.CommandLine -match 'watcher\.py' })
+  } catch {}
   Write-Line "Backend  (API  :8000)" $api
   Write-Line "Frontend (UI   :3000)" $web
   Write-Line "Ollama   (     :11434)" $oll
-  Write-Line "  qwen3:8b pulled" $qwen
+  Write-Line "  qwen3:4b pulled" $qwen
+  Write-Line "Watcher  (raw/ ingest)" $watcher
   Write-Host ""
 }
 
@@ -76,6 +83,11 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
 Write-Host ">> starting frontend on :3000 ..." -ForegroundColor Green
 $frontendCmd = "`$host.ui.RawUI.WindowTitle='SDA frontend :3000'; Set-Location '$root\course-app'; npm run dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
+
+# ---- watcher (auto-ingest raw/) -----------------------------------------
+Write-Host ">> starting raw/ watcher ..." -ForegroundColor Green
+$watcherCmd = "`$host.ui.RawUI.WindowTitle='SDA watcher'; Set-Location '$root'; .venv-win\Scripts\python tools\watcher.py"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", $watcherCmd
 
 Write-Host "`n  UI: http://localhost:3000  (first question takes ~10s while models load)" -ForegroundColor Cyan
 Write-Host "  Check status any time with:  .\run.ps1 -Status`n" -ForegroundColor DarkGray
