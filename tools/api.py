@@ -277,6 +277,62 @@ async def vault_notes(q: str = "", area: str = "", status: str = "", limit: int 
     return await loop.run_in_executor(None, build)
 
 
+@app.get("/api/vault/sync-status")
+async def vault_sync_status():
+    """Git backup state + live vault size for the Vault & Sync panel."""
+    import gitsync
+    loop = asyncio.get_event_loop()
+
+    def build():
+        st = gitsync.status()
+        pages = _concept_pages(vault.collect_pages())
+        total_bytes = 0
+        for f in config.VAULT_ROOT.rglob("*.md"):
+            try:
+                total_bytes += f.stat().st_size
+            except OSError:
+                pass
+        st["size"] = {"notes": len(pages),
+                      "wikilinks": sum(len(p["wikilinks"]) for p in pages.values()),
+                      "bytes": total_bytes}
+        st["autosync"] = state.get_progress("git_autosync", "0") == "1"
+        return st
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.post("/api/vault/sync")
+async def vault_sync(request: Request):
+    import gitsync
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: gitsync.sync(data.get("message")))
+
+
+@app.post("/api/vault/snapshot")
+async def vault_snapshot():
+    import gitsync
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, gitsync.snapshot)
+
+
+@app.post("/api/vault/open-folder")
+async def vault_open_folder():
+    import gitsync
+    return gitsync.open_folder()
+
+
+@app.post("/api/vault/autosync")
+async def vault_autosync(request: Request):
+    data = await request.json()
+    enabled = bool(data.get("enabled"))
+    state.set_progress("git_autosync", "1" if enabled else "0")
+    return {"enabled": enabled}
+
+
 @app.get("/api/flashcards/due")
 async def flashcards_due(limit: int = 60):
     import flashcards as fc

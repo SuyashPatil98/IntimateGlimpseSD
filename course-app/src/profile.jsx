@@ -308,37 +308,98 @@ const Toggle = ({ label, defaultOn = false }) => {
 // =========================================================
 // VAULT & SYNC
 // =========================================================
-const VaultSyncCard = () => {
-  const [syncing, setSyncing] = useState(false);
-  const [progress, setProgress] = useState(0);
+const fmtBytes = (b) => {
+  if (!b) return "—";
+  const mb = b / 1048576;
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
+};
+const fmtNum = (n) => (n == null ? "—" : n.toLocaleString());
 
-  const sync = () => {
-    setSyncing(true); setProgress(0);
-    let p = 0;
-    const t = setInterval(() => {
-      p += Math.random() * 14 + 6;
-      if (p >= 100) { p = 100; clearInterval(t); setTimeout(() => setSyncing(false), 600); }
-      setProgress(p);
-    }, 220);
+const VaultSyncCard = () => {
+  const [status, setStatus] = useState(null);
+  const [autosync, setAutosync] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [snapping, setSnapping] = useState(false);
+  const [msg, setMsg] = useState(null); // { tone: "ok" | "warn", text }
+
+  const load = () =>
+    window.API.get("/api/vault/sync-status")
+      .then((d) => { setStatus(d); setAutosync(!!d.autosync); })
+      .catch(() => setMsg({ tone: "warn", text: "backend unreachable — is the API on :8000?" }));
+
+  useEffect(() => { load(); }, []);
+
+  const sizeStr = status?.size
+    ? `${fmtNum(status.size.notes)} notes · ${fmtBytes(status.size.bytes)} · ${fmtNum(status.size.wikilinks)} wikilinks`
+    : "…";
+  const remoteStr = status ? (status.remote_url || "not configured") : "…";
+  const pathStr = status ? status.vault_path : "…";
+  const lastStr = (() => {
+    if (!status) return "…";
+    const c = status.last_commit;
+    const bits = [];
+    if (status.dirty > 0) bits.push(`${status.dirty} uncommitted`);
+    if (status.ahead) bits.push(`${status.ahead} to push`);
+    if (status.behind) bits.push(`${status.behind} behind`);
+    if (!bits.length && status.has_remote) bits.push("in sync");
+    return (c ? c.relative : "no commits yet") + (bits.length ? " · " + bits.join(" · ") : "");
+  })();
+  const noRemote = status != null && !status.has_remote;
+
+  const doSync = async () => {
+    setSyncing(true); setMsg(null);
+    try {
+      const r = await window.API.post("/api/vault/sync", {});
+      if (r.ok) {
+        setMsg({ tone: "ok", text: r.committed
+          ? `Pushed ${r.files} file${r.files === 1 ? "" : "s"} · ${r.commit}`
+          : (r.pushed ? "Already up to date" : "Nothing to sync") });
+      } else {
+        setMsg({ tone: "warn", text: r.error || "sync failed" });
+      }
+    } catch (e) {
+      setMsg({ tone: "warn", text: "sync failed: " + e.message });
+    } finally { setSyncing(false); load(); }
+  };
+
+  const doSnapshot = async () => {
+    setSnapping(true); setMsg(null);
+    try {
+      const r = await window.API.post("/api/vault/snapshot", {});
+      setMsg(r.ok ? { tone: "ok", text: `Snapshot tagged · ${r.tag}` }
+                  : { tone: "warn", text: r.error || "snapshot failed" });
+    } catch (e) {
+      setMsg({ tone: "warn", text: "snapshot failed: " + e.message });
+    } finally { setSnapping(false); load(); }
+  };
+
+  const openFolder = () => window.API.post("/api/vault/open-folder", {}).catch(() => {});
+
+  const toggleAutosync = async () => {
+    const next = !autosync;
+    setAutosync(next);
+    try { await window.API.post("/api/vault/autosync", { enabled: next }); }
+    catch { setAutosync(!next); }
   };
 
   return (
     <Card title="Vault & sync" glyph={<I.Vault size={12} />}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="VAULT PATH"   value="/Users/aman/Obsidian/SystemDesign" mono />
-        <Field label="REMOTE"       value="git@github.com:aman/sysdesign-vault.git" mono />
-        <Field label="LAST SYNC"    value="14 minutes ago · 3 incoming" />
-        <Field label="VAULT SIZE"   value="312 notes · 7.4 MB · 1,847 wikilinks" />
+        <Field label="VAULT PATH"   value={pathStr} mono />
+        <Field label="REMOTE"       value={remoteStr} mono />
+        <Field label="LAST COMMIT"  value={lastStr} />
+        <Field label="VAULT SIZE"   value={sizeStr} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 16 }}>
-        <button className="btn btn--accent" style={{ justifyContent: "center" }} onClick={sync} disabled={syncing}>
+        <button className="btn btn--accent" style={{ justifyContent: "center" }} onClick={doSync}
+                disabled={syncing || noRemote} title={noRemote ? "No git remote configured" : "Commit + push the repo"}>
           <I.ArrowU size={12} style={{ transform: syncing ? "rotate(180deg)" : "none", transition: "transform 220ms" }} /> {syncing ? "Syncing…" : "Sync now"}
         </button>
-        <button className="btn" style={{ justifyContent: "center" }}>
-          <I.Compile size={12} /> Snapshot backup
+        <button className="btn" style={{ justifyContent: "center" }} onClick={doSnapshot} disabled={snapping || noRemote}>
+          <I.Compile size={12} /> {snapping ? "Tagging…" : "Snapshot backup"}
         </button>
-        <button className="btn" style={{ justifyContent: "center" }}>
+        <button className="btn" style={{ justifyContent: "center" }} onClick={openFolder}>
           <I.File size={12} /> Open vault folder
         </button>
       </div>
@@ -347,20 +408,31 @@ const VaultSyncCard = () => {
         <div style={{ marginTop: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
             <span className="t-label">PUSHING CHANGES</span>
-            <span className="t-mono" style={{ fontSize: 10, color: "var(--accent-hi)" }}>{Math.round(progress)}%</span>
           </div>
-          <div className="pbar pbar--shimmer"><i style={{ width: `${progress}%` }} /></div>
+          <div className="pbar pbar--shimmer"><i style={{ width: "100%" }} /></div>
         </div>
       )}
 
-      <div style={{ marginTop: 16, padding: "10px 12px", background: "rgba(61,255,166,0.04)", border: "1px solid rgba(61,255,166,0.18)", borderRadius: 6, display: "flex", gap: 10, alignItems: "center" }}>
-        <I.Check size={13} stroke="var(--neon-green)" />
+      {msg && (
+        <div className="t-mono" style={{ marginTop: 12, fontSize: 11,
+          color: msg.tone === "ok" ? "var(--neon-green)" : "var(--neon-amber)" }}>
+          {msg.tone === "ok" ? "✓ " : "⚠ "}{msg.text}
+        </div>
+      )}
+
+      <button onClick={toggleAutosync} style={{
+        width: "100%", marginTop: 16, padding: "10px 12px", borderRadius: 6, textAlign: "left",
+        color: "var(--text)", display: "flex", gap: 10, alignItems: "center",
+        background: autosync ? "rgba(61,255,166,0.04)" : "var(--bg-card)",
+        border: `1px solid ${autosync ? "rgba(61,255,166,0.18)" : "var(--border)"}`,
+      }}>
+        <I.Check size={13} stroke={autosync ? "var(--neon-green)" : "var(--text-faint)"} />
         <div style={{ flex: 1 }}>
           <div style={{ color: "var(--text-hi)", fontSize: 12 }}>Auto-sync on promote</div>
           <div className="t-mono" style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>Every promotion triggers a debounced 5s git commit + push.</div>
         </div>
-        <div className="toggle on" />
-      </div>
+        <div className={`toggle ${autosync ? "on" : ""}`} />
+      </button>
     </Card>
   );
 };
@@ -369,8 +441,10 @@ const Field = ({ label, value, mono }) => (
   <div>
     <div className="t-label" style={{ marginBottom: 5 }}>{label}</div>
     <input
-      defaultValue={value}
-      className={mono ? "input" : "input"}
+      readOnly
+      value={value}
+      title={value}
+      className="input"
       style={{ fontFamily: mono ? "var(--font-mono)" : "var(--font-body)", fontSize: mono ? 12 : 13 }}
     />
   </div>

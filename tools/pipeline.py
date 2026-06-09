@@ -78,4 +78,15 @@ def post_vault_write(changed_names: list[str], *, new_page: str | None = None,
     except Exception as e:  # noqa: BLE001
         result["errors"]["course_json"] = str(e)
 
+    # Auto-sync to GitHub if the user enabled it (debounced so a burst of
+    # promotions collapses into one commit + push). Best-effort, never blocks.
+    try:
+        import state
+        if state.get_progress("git_autosync", "0") == "1":
+            import gitsync
+            gitsync.debounced_sync()
+            result["autosync"] = "scheduled"
+    except Exception as e:  # noqa: BLE001
+        result["errors"]["autosync"] = str(e)
+
     return result
