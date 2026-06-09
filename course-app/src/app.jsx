@@ -7,7 +7,7 @@ const { useState, useEffect } = React;
 // =========================================================
 // TOP BAR
 // =========================================================
-const TopBar = ({ view, onView, onOpenCmd, vaultStats, health }) => {
+const TopBar = ({ view, onView, onOpenCmd, vaultStats, health, apiUp }) => {
   return (
     <div className="topbar">
       <div className="brand">
@@ -35,7 +35,7 @@ const TopBar = ({ view, onView, onOpenCmd, vaultStats, health }) => {
           <span style={{ color: "var(--accent-hi)" }}>+{vaultStats.promotedToday} today</span>
         </div>
 
-        <BackendStatusPill health={health} />
+        <BackendStatusPill health={health} apiUp={apiUp} />
 
         <button className="cmdk" onClick={onOpenCmd}>
           <I.Search size={11} />
@@ -53,25 +53,34 @@ const TabBtn = ({ glyph, label, on, onClick }) => (
   </button>
 );
 
-const BackendStatusPill = ({ health }) => {
-  const { qwen, claude, gemini } = health.backends;
-  const primaryOk = qwen;
-  const fallbackOk = claude;
-  const tone =
-    primaryOk ? "ok" :
-    fallbackOk ? "fb" :
-    "dn";
+const BackendStatusPill = ({ health, apiUp }) => {
+  const b = (health && health.backends) || {};
+  const down = apiUp === false;
+  const tone = apiUp === null ? "fb" : down ? "dn" : (b.qwen || b.claude) ? "ok" : "dn";
+  const Seg = ({ label, ok }) => (
+    <>
+      <span className="b" style={{ color: ok ? "var(--text-hi)" : "var(--text-faint)" }}>{label}</span>
+      <span className="seg" style={{ color: ok ? "var(--neon-green)" : "var(--text-faint)" }}>{ok ? "✓" : "✗"}</span>
+    </>
+  );
   return (
-    <div className="backend-pill" title="Backend routing">
+    <div className="backend-pill" title={down ? "Backend API unreachable on :8000 — start it (see README / run.ps1)" : "API :8000 reachable · QWEN local · CLAUDE fallback"}>
       <span className={`dot ${tone}`} />
-      <span className="b">QWEN</span>
-      <span className="seg">{qwen ? "✓" : "·"}</span>
-      <span className="sep">/</span>
-      <span className="b">CLAUDE</span>
-      <span className="seg">{claude ? "✓" : "·"}</span>
-      <span className="sep">/</span>
-      <span className="seg" style={{ color: gemini ? "var(--text-hi)" : "var(--text-faint)" }}>GEMINI</span>
-      <span className="seg" style={{ color: gemini ? "var(--text-hi)" : "var(--text-faint)" }}>{gemini ? "✓" : "✗"}</span>
+      {apiUp === null ? (
+        <span className="b" style={{ color: "var(--text-faint)" }}>CHECKING…</span>
+      ) : down ? (
+        <span className="b" style={{ color: "var(--neon-red)" }}>API DOWN · start backend</span>
+      ) : (
+        <>
+          <Seg label="API" ok />
+          <span className="sep">/</span>
+          <Seg label="QWEN" ok={!!b.qwen} />
+          <span className="sep">/</span>
+          <Seg label="CLAUDE" ok={!!b.claude} />
+          <span className="sep">/</span>
+          <Seg label="GEMINI" ok={!!b.gemini} />
+        </>
+      )}
     </div>
   );
 };
@@ -130,12 +139,23 @@ const CommandPalette = ({ onClose }) => {
 // =========================================================
 // APP ROOT
 // =========================================================
+// Keep-alive wrapper: stays in the DOM when hidden so screen state survives nav.
+const Screen = ({ show, children }) => (
+  <div style={{ height: "100%", display: show ? "block" : "none" }}>{children}</div>
+);
+
 const App = () => {
   const [view, setView] = useState("dashboard");
   const [cmdOpen, setCmdOpen] = useState(false);
   const [health, setHealth] = useState(MOCK_HEALTH);
   const [vaultStats, setVaultStats] = useState(MOCK_VAULT_STATS);
+  const [mounted, setMounted] = useState({ dashboard: true });
+  const [apiUp, setApiUp] = useState(null); // null = checking, true/false = reachable
   const [, setTick] = useState(0);
+
+  // Keep-alive: once a screen is visited it stays mounted (hidden via CSS) so
+  // navigating away and back preserves its state — e.g. the Study conversation.
+  useEffect(() => { setMounted((m) => (m[view] ? m : { ...m, [view]: true })); }, [view]);
 
   // Live backend data, polled. Dashboard reads MOCK_* globals, so we overwrite
   // them with live data and bump a tick to re-render (no edits to dashboard.jsx).
@@ -146,7 +166,7 @@ const App = () => {
         j("/api/health"), j("/api/vault/stats"),
         j("/api/areas/coverage"), j("/api/vault/recent-promoted?n=5"),
       ]);
-      if (h) setHealth(h);
+      if (h) { setHealth(h); setApiUp(true); } else { setApiUp(false); }
       if (stats) { window.MOCK_VAULT_STATS = { ...window.MOCK_VAULT_STATS, ...stats }; setVaultStats(window.MOCK_VAULT_STATS); }
       if (cov && cov.length) window.MOCK_AREA_COVERAGE = cov;
       if (Array.isArray(recent) && recent.length) window.MOCK_RECENT_PROMOTED = recent;
@@ -195,16 +215,17 @@ const App = () => {
           onOpenCmd={() => setCmdOpen(true)}
           vaultStats={vaultStats}
           health={health}
+          apiUp={apiUp}
         />
         <div style={{ minHeight: 0, position: "relative" }}>
-          {view === "dashboard"  && <Dashboard onStart={onStart} />}
-          {view === "study"      && <Study />}
-          {view === "vault"      && <Vault />}
-          {view === "graph"      && <Graph />}
-          {view === "flashcards" && <Flashcards />}
-          {view === "roadmap"    && <Roadmap />}
-          {view === "ingest"     && <Ingest />}
-          {view === "profile"    && <Profile />}
+          <Screen show={view === "dashboard"}>{mounted.dashboard  && <Dashboard onStart={onStart} />}</Screen>
+          <Screen show={view === "study"}>{mounted.study          && <Study />}</Screen>
+          <Screen show={view === "vault"}>{mounted.vault          && <Vault />}</Screen>
+          <Screen show={view === "graph"}>{mounted.graph          && <Graph />}</Screen>
+          <Screen show={view === "flashcards"}>{mounted.flashcards && <Flashcards />}</Screen>
+          <Screen show={view === "roadmap"}>{mounted.roadmap      && <Roadmap />}</Screen>
+          <Screen show={view === "ingest"}>{mounted.ingest        && <Ingest />}</Screen>
+          <Screen show={view === "profile"}>{mounted.profile      && <Profile />}</Screen>
         </div>
       </div>
 

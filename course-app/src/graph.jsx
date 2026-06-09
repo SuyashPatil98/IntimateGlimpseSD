@@ -99,9 +99,10 @@ const useGraphLayout = (nodes, edges, w, h) => {
       };
     });
 
-    // adjacency
+    // adjacency + id→index map (so the sim avoids an O(N) find per edge per tick)
     const adj = new Map(nodes.map(n => [n.id, []]));
-    edges.forEach(([a, b]) => { adj.get(a).push(b); adj.get(b).push(a); });
+    const idx = new Map(pos.map((p, i) => [p.id, i]));
+    edges.forEach(([a, b]) => { if (adj.has(a) && adj.has(b)) { adj.get(a).push(b); adj.get(b).push(a); } });
 
     // simulation ticks
     for (let tick = 0; tick < 220; tick++) {
@@ -119,9 +120,10 @@ const useGraphLayout = (nodes, edges, w, h) => {
           pos[j].vx += fx; pos[j].vy += fy;
         }
       }
-      // attraction along edges
+      // attraction along edges (index lookup, not an O(N) find)
       edges.forEach(([a, b]) => {
-        const A = pos.find(p => p.id === a), B = pos.find(p => p.id === b);
+        const A = pos[idx.get(a)], B = pos[idx.get(b)];
+        if (!A || !B) return;
         const dx = B.x - A.x, dy = B.y - A.y;
         const d = Math.sqrt(dx*dx + dy*dy) + 0.01;
         const target = 80;
@@ -181,10 +183,9 @@ const Graph = () => {
   useEffect(() => {
     fetch("/api/graph").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (!d || !d.nodes || !d.nodes.length) return;
-      // Cap to the most-connected nodes so the client force-layout stays smooth.
-      const top = [...d.nodes].sort((a, b) => (b.inbound || 0) - (a.inbound || 0)).slice(0, 120);
-      const ids = new Set(top.map((n) => n.id));
-      setData({ nodes: top, edges: d.edges.filter(([a, b]) => ids.has(a) && ids.has(b)) });
+      // Show every concept node; keep an id set so edges only reference present nodes.
+      const ids = new Set(d.nodes.map((n) => n.id));
+      setData({ nodes: d.nodes, edges: (d.edges || []).filter(([a, b]) => ids.has(a) && ids.has(b)) });
     }).catch(() => {});
   }, []);
   const nodes = data.nodes;
@@ -325,7 +326,7 @@ const Graph = () => {
             const isSelect = selected === n.id;
             const isNeighbor = focusedNeighbors && focusedNeighbors.has(n.id);
             const dim = focusId && !isHover && !isSelect && !isNeighbor;
-            const color = AREAS[n.area].color;
+            const color = AREAS[n.area]?.color || "var(--text-faint)";
             const stroke =
               n.status === "comprehensive" ? color :
               n.status === "mature"        ? color :

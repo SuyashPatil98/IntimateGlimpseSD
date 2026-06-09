@@ -68,6 +68,7 @@ const Vault = () => {
   const [sort, setSort] = useState("recent");
   const [layout, setLayout] = useState("grid");         // grid | list
   const [notes, setNotes] = useState(VAULT_NOTES);
+  const [open, setOpen] = useState(null);               // note opened in the detail modal
   React.useEffect(() => {
     fetch("/api/vault/notes").then((r) => (r.ok ? r.json() : null)).then((d) => {
       if (Array.isArray(d) && d.length) setNotes(d);
@@ -237,22 +238,62 @@ const Vault = () => {
             gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
             gap: 12,
           }}>
-            {filtered.map(n => <NoteCard key={n.page} n={n} />)}
+            {filtered.map(n => <NoteCard key={n.page} n={n} onOpen={setOpen} />)}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {filtered.map(n => <NoteRow key={n.page} n={n} />)}
+            {filtered.map(n => <NoteRow key={n.page} n={n} onOpen={setOpen} />)}
           </div>
         )}
+      </div>
+
+      {open && <NoteDetail note={open} onClose={() => setOpen(null)} />}
+    </div>
+  );
+};
+
+// =========================================================
+// NOTE DETAIL — opens the real page body via /api/page/{name}
+// =========================================================
+const NoteDetail = ({ note, onClose }) => {
+  const [page, setPage] = useState({ _loading: true });
+  React.useEffect(() => {
+    let alive = true;
+    fetch("/api/page/" + encodeURIComponent(note.page))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setPage(d ? { ...d, _loading: false } : { _loading: false, _error: true }); })
+      .catch(() => { if (alive) setPage({ _loading: false, _error: true }); });
+    return () => { alive = false; };
+  }, [note.page]);
+
+  const def = AREAS[note.area] || { color: "var(--text-faint)", label: note.area || "unknown" };
+
+  return (
+    <div className="modal-veil" onClick={onClose}>
+      <div className="modal" style={{ width: "min(840px, 92vw)", maxHeight: "86vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal__head">
+          <AreaDot area={note.area} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, color: "var(--text-hi)", letterSpacing: "-0.01em" }}>{note.title}</div>
+            <div className="t-mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 3 }}>{def.label} · {note.page}</div>
+          </div>
+          <StatusBadge status={note.status} />
+          <button className="btn btn--ghost btn--sm" onClick={onClose} style={{ marginLeft: 10 }}><I.X size={12} /></button>
+        </div>
+        <div style={{ overflow: "auto", padding: "18px 22px", fontFamily: "var(--font-body)", color: "var(--text-body)", fontSize: 13.5, lineHeight: 1.7, whiteSpace: "pre-wrap", minHeight: 0 }}>
+          {page._loading ? <span className="t-faint">Loading…</span>
+            : page._error ? <span className="t-faint">Could not load this page.</span>
+            : (page.body || note.snippet || "(empty page)")}
+        </div>
       </div>
     </div>
   );
 };
 
-const NoteCard = ({ n }) => {
-  const def = AREAS[n.area];
+const NoteCard = ({ n, onOpen }) => {
+  const def = AREAS[n.area] || { color: "var(--text-faint)", short: (n.area || "?").toUpperCase() };
   return (
-    <button style={{
+    <button onClick={() => onOpen && onOpen(n)} style={{
       display: "flex", flexDirection: "column",
       padding: 14, gap: 10,
       background: "var(--bg-card)",
@@ -294,10 +335,10 @@ const NoteCard = ({ n }) => {
   );
 };
 
-const NoteRow = ({ n }) => {
-  const def = AREAS[n.area];
+const NoteRow = ({ n, onOpen }) => {
+  const def = AREAS[n.area] || { color: "var(--text-faint)", short: (n.area || "?").toUpperCase() };
   return (
-    <button style={{
+    <button onClick={() => onOpen && onOpen(n)} style={{
       display: "grid",
       gridTemplateColumns: "8px 1.2fr 2fr auto auto auto auto",
       gap: 14, alignItems: "center",
