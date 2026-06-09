@@ -10,6 +10,7 @@ sources:
   - Head First Design Patterns
   - Modern Software Engineering (Farley)
 tags: [design-patterns, solid, principles, fundamental]
+aliases: ["SOLID Principles"]
 created: 2026-06-02
 last_reviewed: 2026-06-02
 ---

@@ -15,9 +15,14 @@ from datetime import date, datetime
 from collections import defaultdict
 import yaml
 
-VAULT = Path(__file__).resolve().parent.parent
-EXCLUDE_DIRS = {"raw", ".obsidian", "tools", ".git", "TagsRoutes"}
-META_FILES = {"wiki", "index", "schema", "log", "source-map", "SESSION_STATE"}
+import config
+
+# Scan only the actual vault (not the whole repo), reusing the app's exclusions so
+# conversations/, docs/, .venv-win/ templates, roadmaps/ etc. are never linted as
+# concept pages. This is what kept the report honest vs. the old repo-root scan.
+VAULT = config.VAULT_ROOT
+EXCLUDE_DIRS = set(config.EXCLUDE_DIRS)
+META_FILES = set(config.META_PAGES)
 STALE_DAYS = 180
 TODAY = date(2026, 6, 4)  # campaign date; pages created 2026-06-02/03 are fresh
 
@@ -546,7 +551,7 @@ def main():
     lines.append("")
 
     report_path = write_report(lines, None)
-    print(f"\nReport written to: {report_path.relative_to(VAULT)}\n")
+    print(f"\nReport written to: {report_path}\n")
     print(f"  Broken wikilinks: {len(broken)}")
     print(f"  Orphans: {len(orphans)}")
     print(f"  Soft orphans: {len(soft_orphans)}")
