@@ -79,6 +79,10 @@ class OllamaBackend:
             ],
             "stream": True,
             "keep_alive": keep_alive,
+            # qwen3 is a reasoning model: by default it emits a long <think> block
+            # we strip anyway, so the user waits (often >60s on CPU) seeing nothing.
+            # Disable it — answers are grounded in retrieved context, no CoT needed.
+            "think": config.OLLAMA_THINK,
         }
         if as_json:
             payload["format"] = "json"

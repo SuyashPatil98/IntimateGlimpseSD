@@ -62,6 +62,10 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "-1")
+# qwen3 reasoning ("thinking") mode — OFF by default for speed (the long <think>
+# block is stripped anyway and is the main cause of slow answers). Set OLLAMA_THINK=1
+# to re-enable if you want chain-of-thought.
+OLLAMA_THINK = os.environ.get("OLLAMA_THINK", "0") == "1"
 
 QWEN_ASK_MODEL = os.environ.get("QWEN_ASK_MODEL", "qwen3:8b")
 QWEN_PROMOTE_MODEL = os.environ.get("QWEN_PROMOTE_MODEL", "qwen3:8b")

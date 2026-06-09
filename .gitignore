@@ -46,3 +46,6 @@ course-app/.vite-dev.log
 
 # ── Log files ──
 *.log
+
+# Accidental duplicate of the vault (kept on disk, never tracked)
+/Knowledge Base/
