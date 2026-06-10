@@ -521,6 +521,15 @@ async def roadmap():
     return await loop.run_in_executor(None, build)
 
 
+@app.get("/api/analytics")
+async def analytics_ep():
+    """Usage feedback loop (M6): what to study next, weak cards, thin-but-queried
+    pages, where the vault answers well, per-area coverage, flywheel health."""
+    import analytics
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, analytics.compute)
+
+
 @app.get("/api/config")
 async def get_config():
     h = llm_adapter.health()

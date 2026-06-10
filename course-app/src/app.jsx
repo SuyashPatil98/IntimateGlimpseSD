@@ -157,6 +157,9 @@ const App = () => {
   // navigating away and back preserves its state — e.g. the Study conversation.
   useEffect(() => { setMounted((m) => (m[view] ? m : { ...m, [view]: true })); }, [view]);
 
+  // Let any screen jump tabs (e.g. the study planner's "Study this" buttons).
+  useEffect(() => { window.__sdaGo = setView; }, []);
+
   // Live backend data, polled. Dashboard reads MOCK_* globals, so we overwrite
   // them with live data and bump a tick to re-render (no edits to dashboard.jsx).
   useEffect(() => {
