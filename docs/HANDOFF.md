@@ -57,7 +57,7 @@ Checks: `python -m pytest tools\tests -q` · `python tools\eval_retrieval.py` ·
 | — | **Self-maintaining loop** — audit gap-detector + review queue (draft → review → promote) | ✅ done |
 | — | Session compiler (whole convo → multiple enriching notes) · Vault & Sync · vault cleanup · MarkdownView · `run.ps1` · status pill | ✅ done |
 | M6 | Analytics feedback loop — `analytics.py` + usage-driven **study planner** (the Roadmap screen) | ✅ done |
-| M8 | Flashcard/quiz enrichment (deep "why" per card, button-triggered) | ⬜ TODO — button exists, `deepExplanation` is `None` |
+| M8 | Flashcard deep-explanation enrichment — Claude "why" per card, button-triggered, stored | ✅ done |
 | M7 | Cross-device deploy (Docker + Caddy + Tailscale) + PWA | ⬜ TODO |
 | ~~bug~~ | "Duplicate flashcard rows" — **investigated: none exist** (1808 cards = 1808 vault recall Qs, 0 dups/orphans, `sync_from_vault` verified idempotent). The "4× ADRs" was an analytics display artifact, now fixed. | ✅ resolved |
 
@@ -111,11 +111,12 @@ slow local GPU). Nothing enters the vault without approval. Queue currently hold
 ---
 
 ## Next steps (recommended order)
-1. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
-   flashcards" button → a button-triggered Claude call that fills `deepExplanation` per card
-   (token-controlled, never automatic — see the `flashcard-quiz-enrichment-on-demand` memory). The
-   `/api/flashcards/due` payload returns `deepExplanation: None` today.
-2. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA.
+1. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA. The last
+   milestone — makes the app reachable from your phone/other machines, securely.
+
+`M8 — flashcard enrichment`: ✅ done — `Flashcard.deep_explanation` column + `flashcards.enrich()` +
+`POST /api/flashcards/{id}/enrich` + `flashcard_enricher.md`; the "Explain deeper · Claude" button on a
+revealed card generates a concrete "why" (button-triggered, stored, token-controlled).
 
 `M6 — analytics`: ✅ done — `tools/analytics.py` (`compute()`) + `GET /api/analytics`, surfaced as the
 usage-driven **study planner** (Roadmap screen): study-next, weak flashcards, thin-but-queried pages,
