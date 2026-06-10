@@ -1,4 +1,4 @@
-/* global React, I, AREAS, AREA_ORDER, StatusBadge, AreaDot, Card */
+/* global React, I, AREAS, AREA_ORDER, StatusBadge, AreaDot, Card, MarkdownView */
 
 const { useState, useMemo } = React;
 
@@ -280,10 +280,10 @@ const NoteDetail = ({ note, onClose }) => {
           <StatusBadge status={note.status} />
           <button className="btn btn--ghost btn--sm" onClick={onClose} style={{ marginLeft: 10 }}><I.X size={12} /></button>
         </div>
-        <div style={{ overflow: "auto", padding: "18px 22px", fontFamily: "var(--font-body)", color: "var(--text-body)", fontSize: 13.5, lineHeight: 1.7, whiteSpace: "pre-wrap", minHeight: 0 }}>
+        <div style={{ overflow: "auto", padding: "14px 26px 24px", minHeight: 0 }}>
           {page._loading ? <span className="t-faint">Loading…</span>
             : page._error ? <span className="t-faint">Could not load this page.</span>
-            : (page.body || note.snippet || "(empty page)")}
+            : <MarkdownView text={page.body || note.snippet || "(empty page)"} />}
         </div>
       </div>
     </div>

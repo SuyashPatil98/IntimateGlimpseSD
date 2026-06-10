@@ -290,10 +290,96 @@ const Sparkline = ({ data, color = "var(--accent)", w = 120, h = 32 }) => {
   );
 };
 
+// =========================================================
+// MarkdownView — render vault markdown as formatted notes
+// (no dependency; handles headings, bold/italic, lists, tables,
+//  fenced code blocks / ASCII diagrams, blockquotes, wikilinks, hr)
+// =========================================================
+const _mdInlineStyle = {
+  code: { fontFamily: "var(--font-mono)", fontSize: "0.88em", padding: "1px 5px", background: "var(--bg-deep)", border: "1px solid var(--border)", borderRadius: 3, color: "var(--accent-hi)" },
+  pre: { fontFamily: "var(--font-mono)", fontSize: 12, lineHeight: 1.5, padding: "12px 14px", background: "var(--bg-deep)", border: "1px solid var(--border)", borderRadius: 6, overflowX: "auto", margin: "10px 0", color: "var(--text-body)", whiteSpace: "pre" },
+  table: { borderCollapse: "collapse", width: "100%", margin: "10px 0", fontSize: 12.5 },
+  th: { textAlign: "left", padding: "7px 10px", borderBottom: "1px solid var(--border-strong)", color: "var(--text-hi)", fontWeight: 600, background: "rgba(148,158,200,0.04)" },
+  td: { padding: "7px 10px", borderBottom: "1px solid var(--border)", color: "var(--text-body)", verticalAlign: "top" },
+};
+
+const _mdSplitRow = (line) =>
+  line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((s) => s.trim());
+
+const _mdInline = (s) => {
+  const out = []; let k = 0; let rest = s;
+  const re = /(\*\*[^*]+\*\*|\*[^*\n]+\*|`[^`]+`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/;
+  while (rest) {
+    const m = re.exec(rest);
+    if (!m) { out.push(rest); break; }
+    if (m.index > 0) out.push(rest.slice(0, m.index));
+    const t = m[0];
+    if (t.startsWith("**")) out.push(<b key={k++} style={{ color: "var(--text-hi)", fontWeight: 600 }}>{t.slice(2, -2)}</b>);
+    else if (t.startsWith("`")) out.push(<code key={k++} style={_mdInlineStyle.code}>{t.slice(1, -1)}</code>);
+    else if (t.startsWith("[[")) out.push(<span key={k++} style={{ color: "var(--accent-hi)", fontFamily: "var(--font-mono)", fontSize: "0.9em" }}>{t}</span>);
+    else if (t.startsWith("[")) { const mm = /\[([^\]]+)\]\(([^)]+)\)/.exec(t); out.push(<a key={k++} href={mm[2]} target="_blank" rel="noreferrer" style={{ color: "var(--accent-hi)" }}>{mm[1]}</a>); }
+    else out.push(<i key={k++}>{t.slice(1, -1)}</i>);
+    rest = rest.slice(m.index + t.length);
+  }
+  return out;
+};
+
+const MarkdownView = ({ text }) => {
+  const lines = (text || "").replace(/\r\n/g, "\n").split("\n");
+  const blocks = []; let i = 0;
+  const SPECIAL = /^(#{1,4}\s|```|\s*([-*]|\d+\.)\s|>|\|)/;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.trim().startsWith("```")) {
+      const buf = []; i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
+      i++;
+      blocks.push(<pre key={blocks.length} style={_mdInlineStyle.pre}>{buf.join("\n")}</pre>);
+      continue;
+    }
+    const h = /^(#{1,4})\s+(.*)$/.exec(line);
+    if (h) {
+      const lvl = h[1].length;
+      const size = { 1: 21, 2: 16.5, 3: 14, 4: 13 }[lvl] || 13;
+      blocks.push(<div key={blocks.length} style={{ color: "var(--text-hi)", fontWeight: 600, fontSize: size, margin: lvl <= 2 ? "20px 0 8px" : "14px 0 6px", letterSpacing: "-0.01em", borderBottom: lvl === 1 ? "1px solid var(--border)" : "none", paddingBottom: lvl === 1 ? 6 : 0 }}>{_mdInline(h[2])}</div>);
+      i++; continue;
+    }
+    if (line.trim().startsWith("|") && i + 1 < lines.length && lines[i + 1].includes("-") && /^[\s:|-]+$/.test(lines[i + 1].trim())) {
+      const header = _mdSplitRow(line); i += 2; const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) { rows.push(_mdSplitRow(lines[i])); i++; }
+      blocks.push(
+        <table key={blocks.length} style={_mdInlineStyle.table}>
+          <thead><tr>{header.map((c, j) => <th key={j} style={_mdInlineStyle.th}>{_mdInline(c)}</th>)}</tr></thead>
+          <tbody>{rows.map((r, ri) => <tr key={ri}>{r.map((c, ci) => <td key={ci} style={_mdInlineStyle.td}>{_mdInline(c)}</td>)}</tr>)}</tbody>
+        </table>);
+      continue;
+    }
+    if (/^\s*([-*]|\d+\.)\s+/.test(line)) {
+      const items = []; const ordered = /^\s*\d+\.\s/.test(line);
+      while (i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*([-*]|\d+\.)\s+/, "")); i++; }
+      const Tag = ordered ? "ol" : "ul";
+      blocks.push(<Tag key={blocks.length} style={{ margin: "4px 0 12px", paddingLeft: 22 }}>{items.map((it, j) => <li key={j} style={{ marginBottom: 5, color: "var(--text-body)", lineHeight: 1.6 }}>{_mdInline(it)}</li>)}</Tag>);
+      continue;
+    }
+    if (line.trim().startsWith(">")) {
+      const buf = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) { buf.push(lines[i].replace(/^\s*>\s?/, "")); i++; }
+      blocks.push(<blockquote key={blocks.length} style={{ borderLeft: "3px solid var(--accent-line)", margin: "10px 0", padding: "2px 14px", color: "var(--text-dim)" }}>{_mdInline(buf.join(" "))}</blockquote>);
+      continue;
+    }
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { blocks.push(<hr key={blocks.length} style={{ border: "none", borderTop: "1px solid var(--border)", margin: "16px 0" }} />); i++; continue; }
+    if (line.trim() === "") { i++; continue; }
+    const buf = [line]; i++;
+    while (i < lines.length && lines[i].trim() !== "" && !SPECIAL.test(lines[i]) && !/^\s*([-*_])\1{2,}\s*$/.test(lines[i])) { buf.push(lines[i]); i++; }
+    blocks.push(<p key={blocks.length} style={{ margin: "0 0 12px", color: "var(--text-body)", lineHeight: 1.7 }}>{_mdInline(buf.join(" "))}</p>);
+  }
+  return <div style={{ fontSize: 13.5 }}>{blocks}</div>;
+};
+
 // Export to globals
 Object.assign(window, {
   Icon, I, AREAS, AREA_ORDER,
   MOCK_HEALTH, MOCK_VAULT_STATS, MOCK_AREA_COVERAGE, MOCK_RECENT_PROMOTED,
   MOCK_TODAY_FOCUS, MOCK_SESSION, MOCK_STUDY_THREAD, MOCK_PROMOTE_PROPOSAL,
-  StatusBadge, AreaDot, AreaChip, SourceChip, Card, Ring, Sparkline,
+  StatusBadge, AreaDot, AreaChip, SourceChip, Card, Ring, Sparkline, MarkdownView,
 });
