@@ -40,15 +40,20 @@ def compute() -> dict:
         cards = list(s.exec(select(state.Flashcard)))
         reviews = list(s.exec(select(state.ReviewItem)))
 
-    # --- struggling flashcards: the concepts you keep getting wrong ---
-    # dedupe by page (one card per concept, the worst-performing one)
-    _worst_by_page: dict[str, object] = {}
-    for c in sorted(cards, key=lambda c: (-(c.lapses or 0), c.ease)):
-        if (c.lapses or 0) > 0 and c.page not in _worst_by_page:
-            _worst_by_page[c.page] = c
-    struggling = list(_worst_by_page.values())[:12]
+    # --- struggling flashcards: the individual questions you keep getting wrong ---
+    struggling_cards = sorted((c for c in cards if (c.lapses or 0) > 0),
+                              key=lambda c: (-(c.lapses or 0), c.ease))
     weak_cards = [{"page": c.page, "area": c.area, "question": c.question,
-                   "lapses": c.lapses, "ease": round(c.ease, 2)} for c in struggling]
+                   "lapses": c.lapses, "ease": round(c.ease, 2)} for c in struggling_cards[:12]]
+    # per-page rollup, so 'study next' lists a page ONCE (not each failing card on it)
+    page_fail: dict[str, int] = {}
+    page_cards: dict[str, int] = {}
+    page_area_of: dict[str, str] = {}
+    for c in struggling_cards:
+        page_fail[c.page] = page_fail.get(c.page, 0) + (c.lapses or 0)
+        page_cards[c.page] = page_cards.get(c.page, 0) + 1
+        page_area_of[c.page] = c.area
+    struggling_pages = sorted(page_fail, key=lambda p: -page_fail[p])
 
     # --- per-area: vault coverage + how much YOU query it ---
     area_total, area_mature = defaultdict(int), defaultdict(int)
@@ -89,9 +94,10 @@ def compute() -> dict:
 
     # --- what to study next (synthesised, ranked) ---
     study_next = []
-    for c in struggling[:4]:
-        study_next.append({"kind": "weak-recall", "title": c.page, "area": c.area,
-                           "why": f"failed {c.lapses}× in flashcard review"})
+    for pg in struggling_pages[:4]:
+        n = page_cards[pg]
+        why = f"failing {n} of its flashcards" if n > 1 else f"missed {page_fail[pg]}× in review"
+        study_next.append({"kind": "weak-recall", "title": pg, "area": page_area_of[pg], "why": why})
     for t in thin[:3]:
         study_next.append({"kind": "thin-page", "title": t["page"], "area": t["area"],
                            "why": f"queried {t['retrieved']}× but still {t['status']}"})
@@ -107,7 +113,7 @@ def compute() -> dict:
         "promotions_week": sum(1 for p in proms if _aware(p.created_at) >= week0),
         "reviews_pending": sum(1 for r in reviews if r.status in ("suggested", "pending")),
         "cards_total": len(cards),
-        "cards_struggling": len(struggling),
+        "cards_struggling": len(struggling_cards),
         "vault_pages": len(pages),
     }
 

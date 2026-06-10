@@ -59,7 +59,7 @@ Checks: `python -m pytest tools\tests -q` · `python tools\eval_retrieval.py` ·
 | M6 | Analytics feedback loop — `analytics.py` + usage-driven **study planner** (the Roadmap screen) | ✅ done |
 | M8 | Flashcard/quiz enrichment (deep "why" per card, button-triggered) | ⬜ TODO — button exists, `deepExplanation` is `None` |
 | M7 | Cross-device deploy (Docker + Caddy + Tailscale) + PWA | ⬜ TODO |
-| bug | Duplicate flashcard rows (sync dedup) — `flashcards.py:sync_from_vault` re-inserts; flagged | ⬜ TODO |
+| ~~bug~~ | "Duplicate flashcard rows" — **investigated: none exist** (1808 cards = 1808 vault recall Qs, 0 dups/orphans, `sync_from_vault` verified idempotent). The "4× ADRs" was an analytics display artifact, now fixed. | ✅ resolved |
 
 ---
 
@@ -111,13 +111,11 @@ slow local GPU). Nothing enters the vault without approval. Queue currently hold
 ---
 
 ## Next steps (recommended order)
-1. **Fix the flashcard dedup bug** — `flashcards.py:sync_from_vault` inserts duplicate rows
-   (the analytics surfaced "What's an ADR?" 4×). Clean up dups + make sync idempotent.
-2. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
+1. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
    flashcards" button → a button-triggered Claude call that fills `deepExplanation` per card
    (token-controlled, never automatic — see the `flashcard-quiz-enrichment-on-demand` memory). The
    `/api/flashcards/due` payload returns `deepExplanation: None` today.
-3. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA.
+2. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA.
 
 `M6 — analytics`: ✅ done — `tools/analytics.py` (`compute()`) + `GET /api/analytics`, surfaced as the
 usage-driven **study planner** (Roadmap screen): study-next, weak flashcards, thin-but-queried pages,

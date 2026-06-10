@@ -85,7 +85,7 @@ const Roadmap = () => {
           <Card title="You keep missing" glyph={<I.Cards size={12} />}>
             {(d.weak_cards || []).length === 0
               ? <Empty>No struggling cards yet — review the deck and the ones you fail land here.</Empty>
-              : d.weak_cards.map((c, i) => <Row key={i} area={c.area} title={c.question} right={`${c.lapses}× missed`} tone="red" />)}
+              : d.weak_cards.map((c, i) => <Row key={i} area={c.area} title={`${c.page} · ${c.question}`} right={`${c.lapses}× missed`} tone="red" />)}
           </Card>
           <Card title="Queried a lot, still thin" glyph={<I.File size={12} />}>
             {(d.thin_pages || []).length === 0
