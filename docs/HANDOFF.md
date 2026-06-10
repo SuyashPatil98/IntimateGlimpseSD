@@ -1,53 +1,50 @@
 # SystemDesignAI — Build Handoff (resume here)
 
-**Last updated:** 2026-06-09. This is the continuity doc for the *rebuild* work. A fresh
-session should read, in order: **`../README.md`** → **`../CLAUDE.md`** (project context) → **this file** (what's
-done / how to run / what's next) → **`opus-master-brief.md`** (same folder, the original plan). The full
-implementation plan also lives at `~/.claude/plans/sleepy-brewing-haven.md`.
+**Last updated:** 2026-06-10. Continuity doc. A fresh session should read, in order:
+**`../README.md`** → **`../CLAUDE.md`** (project context) → **this file** → **`opus-master-brief.md`**.
 
-> Remote: `origin` → `github.com/SuyashPatil98/IntimateGlimpseSD` (whole-repo backup, "option 1"). Branch `main`.
-> The task list (TaskCreate) does NOT persist across sessions — the milestone status below is
-> the source of truth.
+> Remote: `origin` → `github.com/SuyashPatil98/IntimateGlimpseSD` (whole-repo backup). Branch `main`, pushed.
+> The milestone status below is the source of truth (TaskCreate does not persist across sessions).
 
 ---
 
 ## Where we are (TL;DR)
 
-The intelligent backend (M0–M3) and the React cockpit + its live wiring (M4) are **done and
-committed**. The whole study loop was validated **live, end-to-end** on 2026-06-09: a real
-question returned real vault sources (Raft/Paxos/Consensus…) + a grounded answer, with the
-Qwen→Claude fallback firing correctly.
+The app is **complete and usable locally.** The intelligent backend (M0–M3), the React cockpit (M4),
+the **raw-ingest pipeline (M5)**, and the **self-maintaining review loop** are all done, committed, and
+pushed. Validated live end-to-end: the `LRU` gap was filled *through the loop* (vault 293 → 294), and a
+PDF ingested into 25 queued sections.
 
-**All 8 cockpit screens read live data:** Dashboard, Study, Graph, Vault, Flashcards, Roadmap,
-Profile, Ingest (Ingest queue is real-but-empty until the M5 pipeline exists).
+**One command starts everything:** `.\run.ps1` → Ollama + backend + frontend + raw/ watcher + opens the UI.
 
 ---
 
-## How to run it (Windows, from repo root `C:\Projects\SystemDesignAI\SystemDesign`)
+## How to run it (Windows, repo root `C:\Projects\SystemDesignAI\SystemDesign`)
 
 ```powershell
-# Backend (FastAPI on :8000). Use .venv-win (the WSL .venv is dead on Windows).
-.venv-win\Scripts\python -m uvicorn api:app --app-dir tools --port 8000 --reload
-
-# Frontend (Vite on :3000, proxies /api -> :8000)
-cd course-app ; npm run dev      # http://localhost:3000
+.\run.ps1            # Ollama + backend(:8000) + frontend(:3000) + watcher, opens http://localhost:3000
+.\run.ps1 -Status    # UP/DOWN for all four processes
 ```
 
-Quick checks without the UI:
-- `.venv-win\Scripts\python tools\dryrun_claude.py` — tests the Sonnet promote route + prints cost.
-- `.venv-win\Scripts\python -m pytest tools\tests -q` — 29 unit tests (retrieval/routing/compiler/etc.).
-- `.venv-win\Scripts\python tools\eval_retrieval.py` — retrieval probe gate (14/15 pass).
+Manual (separate terminals):
+`.venv-win\Scripts\python -m uvicorn api:app --app-dir tools --port 8000`  ·
+`npm --prefix course-app run dev`  ·  `.venv-win\Scripts\python tools\watcher.py`
 
-## Backend connection state (as of 2026-06-09)
+Checks: `python -m pytest tools\tests -q` · `python tools\eval_retrieval.py` ·
+`python tools\audit.py` (prints the gaps + status-fills it would queue).
 
-- ✅ `.env` now has a valid **`ANTHROPIC_API_KEY`** (user added it). Claude/Sonnet works.
-  ⚠️ That key was shared in chat — recommend rotating it.
-- ⚠️ **Ollama is running but `qwen3:8b` is NOT pulled** → conversations currently fall back to
-  Claude **Haiku** (costs a little). Run **`ollama pull qwen3:8b`** to make chat free + local.
-- Gemini key in `.env` is out of credits / unused (not in routing).
-- Routing (confirmed, in `tools/config.py`): **ask → Qwen→Claude(Haiku)**, **promote → Sonnet→Qwen**.
-- Models: retrieval = `BAAI/bge-small-en-v1.5` + `cross-encoder/ms-marco-MiniLM-L-6-v2` (CPU),
-  cached in `.cache/embeddings.npz`. First `/api/ask` after a cold start takes ~10s to load them.
+## Runtime state (2026-06-10)
+
+- **LLM:** chat = **qwen3:4b** local (qwen3:8b removed). `OLLAMA_THINK=1` → clean answers (hidden
+  reasoning is stripped) but slow first token: the GPU runs 4b at ~33% CPU, so chat is ~30s to first
+  word — a **hardware ceiling**, not a bug. Promote/compile = **Claude Sonnet**. Fallbacks: ask→Haiku,
+  promote→qwen. All in `.env` + `tools/config.py`.
+- `.env`: valid `ANTHROPIC_API_KEY` (⚠️ shared in chat early — **rotate it**), `QWEN_ASK_MODEL=qwen3:4b`,
+  `QWEN_PROMOTE_MODEL=qwen3:4b`, `OLLAMA_THINK=1`.
+- Retrieval: `BAAI/bge-small-en-v1.5` + `cross-encoder/ms-marco-MiniLM-L-6-v2` (CPU); cold-loads ~10s on
+  the first `/api/ask` or first review-draft.
+- Vault: **294 concept pages**. `index.md` is regenerable via `tools/build_index.py`. Lint is clean
+  (`tools/lint.py`, now vault-scoped) apart from 20 status-realism items (queued as review fills).
 
 ---
 
@@ -55,67 +52,77 @@ Quick checks without the UI:
 
 | # | Milestone | Status |
 |---|---|---|
-| M0 | Foundations (git, .venv-win, config, state.db, prompts loader) | ✅ done |
-| M1 | Hybrid retrieval (BM25 + dense + rerank + graph) | ✅ done (14/15 probes) |
-| M2 | LLM adapter (Qwen/Claude/Gemini, routing+fallback, caching) + Opus prompts | ✅ done |
-| M3 | Sessions + compiler + post-write pipeline + integrity (fixes append bug) | ✅ done |
-| M4 | React cockpit: ported Claude Design + wired ALL 8 screens to live backend | ✅ done |
-| — | Claude usage/cost tracking + Dashboard spend card | ✅ done |
-| M5 | Raw ingest pipeline + watcher (drop PDF → auto notes) | ⬜ TODO |
-| M6 | Analytics / feedback loop | ⬜ TODO |
-| M7 | Secure cross-device deploy (Docker + Caddy + Tailscale) | ⬜ TODO |
-| M8 | On-demand flashcard & quiz enrichment (button, token-controlled) | ⬜ TODO |
-| — | PWA (installable, offline flashcards) | ⬜ TODO |
+| M0–M4 | Foundations · hybrid retrieval · LLM adapter · sessions/compiler/pipeline · React cockpit (8 live screens) | ✅ done |
+| M5 | Raw ingest pipeline + watcher (drop PDF → sections → review queue) | ✅ done |
+| — | **Self-maintaining loop** — audit gap-detector + review queue (draft → review → promote) | ✅ done |
+| — | Vault & Sync panel (real git backup) · vault cleanup · MarkdownView · `run.ps1` · honest status pill | ✅ done |
+| M8 | Flashcard/quiz enrichment (deep "why" per card, button-triggered) | ⬜ TODO — button exists, `deepExplanation` is `None` |
+| M6 | Analytics / feedback loop (`tools/analytics.py` missing) | ⬜ TODO |
+| M7 | Cross-device deploy (Docker + Caddy + Tailscale) + PWA | ⬜ TODO |
 
 ---
 
 ## Architecture map
 
-**Backend `tools/`** (run with `--app-dir tools`; modules import each other by bare name):
-- `config.py` — env + paths + routing + model prices. `state.py` — SQLite (sessions, flashcards,
-  TokenUsage, Promotion, etc.). `prompts/` — Opus-authored `vault_qa_system.md`,
-  `knowledge_compiler.md`, `query_rewriter.md` + `load_prompt()`.
-- `retrieval.py` — the hybrid engine. `llm_adapter.py` — backends + `stream()`/`complete()`/`health()`.
-- `compiler.py` — CREATE/EXTEND/SKIP. `vault_write.py` — section-merge (the bug fix) + page write.
-  `backlink_patcher.py`, `integrity.py`, `pipeline.py` (post_vault_write). `flashcards.py` — SM-2.
-- `api.py` — all endpoints (see below). Legacy kept: `vault.py`, `export_json.py`, `lint.py`,
-  `build_roadmaps.py`, `export_anki.py`, `reflection_engine.py`, `sync_notion.py`.
+**Backend `tools/`** (run with `--app-dir tools`; bare-name imports):
+- Core: `config.py` (env/paths/routing/prices + `OLLAMA_THINK`), `state.py` (SQLite: sessions,
+  flashcards, TokenUsage, Promotion, **ReviewItem**), `prompts/`, `retrieval.py`,
+  `llm_adapter.py` (qwen/claude/gemini + the `OLLAMA_THINK` toggle), `compiler.py`, `vault_write.py`,
+  `integrity.py`, `backlink_patcher.py`, `pipeline.py`, `flashcards.py` (SM-2; `sync_from_vault()` runs
+  on every `due_cards`, so promoting a page auto-adds its recall questions).
+- **Self-maintaining loop:** `audit.py` (gap + status-fill detector), `ingest.py` + `extractor.py`
+  (PDF/markdown → sections) + `watcher.py` (raw/ auto-ingest, separate process), `gitsync.py`
+  (Vault & Sync), `build_index.py` (regenerate index.md), `lint.py` (vault-scoped).
+- `api.py` — all endpoints.
 
-**API endpoints (all live):** `/api/health`, `/api/usage`, `/api/ask` (SSE), `/api/session/*`,
-`/api/promote`, `/api/confirm_promotion`, `/api/search`, `/api/page/{name}`, `/api/graph`,
-`/api/areas/coverage`, `/api/vault/stats`, `/api/vault/recent-promoted`, `/api/vault/notes`,
-`/api/flashcards/due` + `/rate`, `/api/roadmap`, `/api/config`, `/api/ingest/queue`.
+**API endpoints:** health · usage · ask (SSE) · session/* · promote · confirm_promotion · search ·
+page/{name} · graph · areas/coverage · vault/{stats,recent-promoted,notes} ·
+**vault/{sync-status,sync,snapshot,open-folder,autosync}** · flashcards/{due,rate} · roadmap · config ·
+ingest/queue · **ingest** · **ingest/upload** ·
+**review/{queue, run-audit, &lt;id&gt;/draft, &lt;id&gt;/approve, &lt;id&gt;/reject}**.
 
-**Frontend `course-app/`** — Vite + React (vanilla, the Claude Design "cockpit"):
-- It's the design's browser-global pattern preserved under Vite: `src/_react-global.js` puts
-  React on `window` (loaded FIRST), `src/main.jsx` imports everything in order, `src/app.jsx`
-  self-mounts. **Zero framework rewrite** — screens read `MOCK_*`/local consts.
-- `src/api.js` (`window.API`) — fetch + SSE client. `src/tokens.css` — the design system.
-- Screens: `dashboard/study/vault/graph/flashcards/roadmap/ingest/profile.jsx`. Each was wired
-  by adding a `fetch` + state (or, for the dashboard, overwriting the `MOCK_*` globals in
-  `app.jsx` and re-rendering). **The original design source is archived in `design-archive/`
-  (incl. `design.md`, the UI↔backend contract).**
+**Frontend `course-app/`** (Vite + React, browser-global pattern; `main.jsx` imports in order, screens
+self-publish on `window`):
+- `app.jsx` — keep-alive nav (screens stay mounted so state survives tab switches) + honest
+  API/QWEN/CLAUDE/GEMINI status pill (shows **API DOWN** when unreachable).
+- `shared.jsx` — atoms, AREAS, **`MarkdownView`** (no-dependency markdown renderer: headings, bold/italic,
+  lists, tables, fenced code/ASCII diagrams, wikilinks).
+- `api.js` (`window.API`), `tokens.css`. Design archive in `docs/design-archive/`.
+- Screens: dashboard/study/vault/graph/flashcards/roadmap/profile + **ingest** (rebuilt as the **review
+  queue** — drag-drop upload, Run audit, per-item Draft → Review → Promote/Reject; reuses `PromoteModal`).
+- Vault explorer: clicking a note opens it in a modal rendered with `MarkdownView`.
+
+---
+
+## The self-maintaining loop (the new core)
+
+One **review queue** (`state.ReviewItem`), three feeders:
+1. **audit** — `POST /api/review/run-audit` → 48 gaps (planned-but-missing, from `audit.TARGET`) +
+   20 status-fills (mature pages missing a required section, from `lint.check_status_realism`).
+2. **ingest** — drag-drop upload / `POST /api/ingest` / the watcher → PDF/markdown split into sections.
+3. **You** — **Draft** (`/api/review/<id>/draft` → `compiler.compile_conversation`, Claude Sonnet writes a
+   schema-valid page) → **Review** (PromoteModal, editable) → **Approve** (`/api/review/<id>/approve` →
+   `compiler.apply_decision` → `pipeline.post_vault_write` → auto-sync) or **Reject**.
+
+Detection is instant + deterministic; drafting is per-item, user-chosen, and runs on **Claude** (not the
+slow local GPU). Nothing enters the vault without approval. Queue currently holds ~91 suggestions.
 
 ---
 
 ## Next steps (recommended order)
-
-1. **`ollama pull qwen3:8b`** so conversations run free/local (currently Haiku fallback).
-2. **M5 — ingest pipeline**: `tools/extractor.py` (pymupdf4llm), `tools/ingest.py` (two-pass:
-   retrieval dedup → compiler), `tools/watcher.py` (watchdog, separate process), `raw/manifest.json`;
-   wire the Ingest screen's drag-drop → `POST /api/ingest`.
-3. **M8 — flashcard/quiz enrichment** (button, token-controlled) — design in the plan file + the
-   `flashcard-quiz-enrichment-on-demand` memory. The "Improve flashcards" button + Quiz exist in UI.
-4. **M7 — deploy**: Dockerfile + docker-compose (api + ollama + caddy) + Tailscale for secure
-   from-anywhere access; PWA. Server-side state already in SQLite for cross-device sync.
-5. **M6 — analytics** over `query_log`/`page_stats`/`TokenUsage`.
+1. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
+   flashcards" button → a button-triggered Claude call that fills `deepExplanation` per card
+   (token-controlled, never automatic — see the `flashcard-quiz-enrichment-on-demand` memory). The
+   `/api/flashcards/due` payload returns `deepExplanation: None` today.
+2. **M6 — analytics** (`tools/analytics.py`) over `QueryLog`/`PageStat`/`TokenUsage`:
+   most-queried-never-promoted, flywheel health, queue throughput.
+3. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA.
 
 ## Known loose ends
-- Study left-rail/Compile and the keyboard ⌘⇧P route to Study; the per-answer **Promote** button is
-  the real promote path (compiles the conversation → editable modal → `/api/confirm_promotion`).
-- Roadmap currently derives lanes from *coverage*; vault is ~96% mature so it shows one "Mastered"
-  lane. Better to base it on quiz gaps later (M6).
-- The preview/screenshot MCP tool was flaky in the build session; the app itself renders fine
-  (verified via DOM eval + live API).
-- `conversations/` accrues runtime Q&A logs (untracked, on disk). `state.db`, `.cache/`, `.venv-win/`
-  are gitignored.
+- **Chat is slow** (~30s first word) on this GPU — qwen3:4b runs ~33% on CPU. Levers: Claude Haiku for
+  ask (fast, ~$0.004/query) or a bigger GPU. `OLLAMA_THINK=0` streams sooner but answers ramble.
+- Review queue UI doesn't auto-refresh — click **Refresh** after ingesting.
+- **`Knowledge Base/`** at repo root is a 312-file accidental *duplicate* of the vault (gitignored, on
+  disk). Safe to delete; left in place per user request.
+- The old WSL `.venv` is dead-on-Windows and still on disk (gitignored).
+- `conversations/`, `state.db`, `.cache/`, `.venv-win/`, `raw/manifest.json` are gitignored.

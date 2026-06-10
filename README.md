@@ -23,9 +23,10 @@ Inspired by Karpathy's "LLM Wiki" approach.
 - **A learning cockpit** — an 8-screen React UI: Dashboard, Study, Vault Explorer, Knowledge Graph,
   Flashcards (SM-2 spaced repetition), Roadmap, Ingest, and Profile.
 
-**Status:** the backend (M0–M3) and the React cockpit with all 8 screens wired to live data (M4)
-are **done** and were validated end-to-end. See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the live
-milestone status and what's next.
+**Status:** complete and usable locally. The intelligent backend (M0–M3), the React cockpit (M4),
+the raw-ingest pipeline (M5), and the **self-maintaining review loop** (audit gaps / ingest PDFs →
+draft via Claude → review → promote) are done and validated end-to-end. See
+[`docs/HANDOFF.md`](docs/HANDOFF.md) for the live milestone status and what's next.
 
 ---
 
@@ -59,10 +60,16 @@ milestone status and what's next.
 
 ## Running it (Windows / PowerShell)
 
+**Easiest — one command** (starts Ollama + backend + frontend + the `raw/` watcher, opens the UI):
+```powershell
+.\run.ps1            # start everything
+.\run.ps1 -Status    # check what's UP / DOWN
+```
+
 **Prerequisites**
 - Python 3.12 virtualenv at `.venv-win` (the WSL `.venv` does not work on Windows).
 - Node.js + npm.
-- [Ollama](https://ollama.com) running with `qwen3:8b` pulled (`ollama pull qwen3:8b`) — for free,
+- [Ollama](https://ollama.com) running with `qwen3:4b` pulled (`ollama pull qwen3:4b`) — for free,
   local chat. Without it, `/api/ask` falls back to Claude Haiku (small cost).
 - `.env` with a valid `ANTHROPIC_API_KEY` (used for the promote/compile route). See `.env.example`.
 
@@ -83,7 +90,7 @@ notepad .env                 # set ANTHROPIC_API_KEY=sk-ant-...
 cd course-app ; npm install ; cd ..
 
 # Local model for free chat (install Ollama from https://ollama.com first)
-ollama pull qwen3:8b
+ollama pull qwen3:4b
 ```
 > `state.db` (flashcard schedules, session + usage history) is **not** synced via git — each
 > machine starts with fresh local state. The vault, code, prompts, and `.env.example` all sync.
@@ -113,8 +120,8 @@ Then open <http://localhost:3000>.
 
 | Use case | Primary | Fallback |
 |---|---|---|
-| `/api/ask` (streaming Q&A) | `qwen3:8b` (Ollama, local, free) | Claude Haiku |
-| `/api/promote` (knowledge compiler) | Claude Sonnet | `qwen3:8b` |
+| `/api/ask` (streaming Q&A) | `qwen3:4b` (Ollama, local, free) | Claude Haiku |
+| `/api/promote` (knowledge compiler) | Claude Sonnet | `qwen3:4b` |
 
 Fallback is **never silent** — the UI is notified when a switch happens. Models and prices live in
 `tools/config.py`; usage/cost is tracked in SQLite and surfaced on the Dashboard.

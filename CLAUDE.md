@@ -1,10 +1,16 @@
 # SystemDesignAI — Project Context for AI Sessions
 
-> ⚠️ **Partially stale (pre-rebuild).** For the *current* state of the build, read
-> [`README.md`](README.md) and [`docs/HANDOFF.md`](docs/HANDOFF.md) first. This file is kept
-> for its deep philosophy/architecture context, but specific capability claims below
-> (e.g. "Not a git repository", "vanilla JS frontend", FAISS/Claude/ingest "not built")
-> have been **superseded by the M0–M4 rebuild**.
+> ⚠️ **Philosophy/architecture reference — the capability claims below are pre-rebuild and stale.**
+> For the *current* state, read [`README.md`](README.md) and [`docs/HANDOFF.md`](docs/HANDOFF.md) first.
+>
+> **As of 2026-06-10 the app is complete and usable locally.** Done: M0–M5 *plus* a **self-maintaining
+> review loop** — `audit.py` finds vault gaps + under-built pages, the ingest pipeline pulls sections
+> from dropped PDFs, you Draft (Claude Sonnet) → Review → Promote in the Ingest screen's review queue.
+> Chat = **qwen3:4b** local; compile = **Claude Sonnet**. Start everything with **`.\run.ps1`**.
+> Still TODO: M8 (flashcard deep-explanation enrichment), M6 (analytics), M7 (cross-device deploy).
+>
+> Specific claims below that are **superseded** (trust `docs/HANDOFF.md` over this file): "Not a git
+> repository", "vanilla JS frontend", FAISS/Claude/ingest/sessions "not built", the 295-page counts.
 
 SystemDesignAI is a **personal system design learning platform** — not a SaaS product, not a course. It is a self-contained tool for one user to study, query, and grow a structured knowledge base about system design. The core philosophy: **conversations are temporary, the vault is permanent.** Everything valuable gets distilled and saved. The LLM is a compiler, not a chatbot.
 
