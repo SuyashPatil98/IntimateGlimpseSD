@@ -95,6 +95,45 @@ def compile_conversation(conversation: str, *, multi_turn: bool = False) -> dict
         raise CompilerError(f"Compiler returned invalid JSON: {e}\n---\n{raw[:500]}") from e
 
 
+def compile_session(conversation: str) -> list[dict]:
+    """Turn a full study conversation into MULTIPLE vault improvements — one per
+    concept it engaged — via Claude + the session_compiler prompt. Returns a list of
+    proposals; each validates/applies like a normal compile decision. Unlike
+    compile_conversation (one page, consolidation), this is biased to ENRICH: it sees
+    the full content of the most relevant pages and adds the depth they lack."""
+    pages = vault.collect_pages()
+    vault_map = build_vault_map(pages)
+    aliases = build_aliases_block()
+    session_date = datetime.date.today().isoformat()
+
+    rel = ""
+    try:
+        import retrieval
+        seen = set()
+        for r in retrieval.search(conversation, top_n=6, expand_graph=False):
+            if r.page in pages and r.page not in seen:
+                seen.add(r.page)
+                rel += (f'<page name="{r.page}">\n'
+                        f'{pages[r.page]["path"].read_text(encoding="utf-8")}\n</page>\n')
+    except Exception:  # noqa: BLE001
+        pass
+
+    cache_prefix = f"<vault_map>\n{vault_map}\n</vault_map>\n<aliases>\n{aliases}\n</aliases>\n"
+    user = (f"<session_date>{session_date}</session_date>\n"
+            f"<relevant_pages>\n{rel}</relevant_pages>\n"
+            f"<conversation>\n{conversation}\n</conversation>")
+
+    raw = llm_adapter.complete("promote", load_prompt("session_compiler"),
+                               user, cache_prefix=cache_prefix, as_json=True)
+    try:
+        data = json.loads(_strip_fences(raw))
+    except json.JSONDecodeError as e:
+        raise CompilerError(f"Session compiler returned invalid JSON: {e}\n---\n{raw[:500]}") from e
+    if isinstance(data, dict):
+        data = data.get("proposals") or [data]
+    return [p for p in data if isinstance(p, dict)]
+
+
 def validate_decision(d: dict) -> tuple[list[str], list[str]]:
     """(blocking, warnings) for a proposal before it's applied."""
     dec = d.get("decision")

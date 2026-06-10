@@ -6,7 +6,7 @@ const { useState, useEffect, useRef } = React;
 // =========================================================
 // LEFT — session context column (live from the conversation)
 // =========================================================
-const StudyLeft = ({ session, onCompile, onCollapse, collapsed }) => {
+const StudyLeft = ({ session, onCompile, onCollapse, collapsed, compiling }) => {
   const s = session || MOCK_SESSION;
   const [historyOpen, setHistoryOpen] = useState(true);
 
@@ -67,11 +67,11 @@ const StudyLeft = ({ session, onCompile, onCollapse, collapsed }) => {
       </div>
 
       <div style={{ padding: 10, borderTop: "1px solid var(--border)" }}>
-        <button className="btn btn--accent" style={{ width: "100%", justifyContent: "center" }} onClick={onCompile} disabled={s.queries === 0}>
-          <I.Compile size={12} /> Compile session
+        <button className="btn btn--accent" style={{ width: "100%", justifyContent: "center" }} onClick={onCompile} disabled={s.queries === 0 || compiling}>
+          <I.Compile size={12} /> {compiling ? "Compiling…" : "Compile session"}
         </button>
         <div className="t-mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 6, textAlign: "center" }}>
-          Distill {s.queries} queries → 1 note
+          {s.queries} queries → notes that improve the vault
         </div>
       </div>
     </div>
@@ -302,6 +302,9 @@ const Study = () => {
   const [proposal, setProposal] = useState(null);
   const [promoteBusy, setPromoteBusy] = useState(false);
   const [promoteCount, setPromoteCount] = useState(0);
+  const [sessionProposals, setSessionProposals] = useState(null);  // whole-session compile
+  const [reviewIdx, setReviewIdx] = useState(null);                // which session proposal is open
+  const [compiling, setCompiling] = useState(false);
   const startedAt = useRef(Date.now());
 
   const updateLast = (fn) => setMessages(m => {
@@ -345,6 +348,33 @@ const Study = () => {
     setProposal(null);
   };
 
+  // Compile the WHOLE conversation into multiple vault improvements (enrich, not consolidate).
+  const compileSession = async () => {
+    const convo = messages.map(x => x.role === "user" ? "Q: " + x.q : "A: " + (x.answer || "")).join("\n\n");
+    if (!convo.trim() || compiling) return;
+    setCompiling(true);
+    try {
+      const r = await API.post("/api/compile_session", { conversation: convo });
+      if (r.status === "ok") setSessionProposals((r.proposals || []).map(p => ({ ...p, _done: false })));
+      else setSessionProposals([{ decision: "SKIP", reason: r.message || "Compile failed." }]);
+    } catch (e) { setSessionProposals([{ decision: "SKIP", reason: String(e) }]); }
+    setCompiling(false);
+  };
+
+  const confirmSession = async (edited) => {
+    if (reviewIdx == null) return;
+    const p = { ...sessionProposals[reviewIdx] };
+    if (edited != null) p[p.decision === "CREATE" ? "content" : "new_content"] = edited;
+    try {
+      const r = await API.post("/api/confirm_promotion", { proposal: p });
+      if (r.status === "ok" && r.result && r.result.applied) {
+        setSessionProposals(arr => arr.map((x, i) => i === reviewIdx ? { ...x, _done: true } : x));
+        setPromoteCount(c => c + 1);
+      }
+    } catch (e) { /* ignore */ }
+    setReviewIdx(null);
+  };
+
   const openPage = async (src) => {
     setRightCol(false);
     setPreviewPage({ ...src, body: "", _loading: true });
@@ -373,10 +403,16 @@ const Study = () => {
 
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
-      <StudyLeft session={session} collapsed={leftCol} onCollapse={() => setLeftCol(c => !c)} onCompile={promote} />
+      <StudyLeft session={session} collapsed={leftCol} onCollapse={() => setLeftCol(c => !c)} onCompile={compileSession} compiling={compiling} />
       <StudyCenter messages={messages} busy={busy} onAsk={ask} onPromote={promote} promoteBusy={promoteBusy} onOpenPage={openPage} />
       <StudyRight collapsed={rightCol} onCollapse={() => setRightCol(c => !c)} page={previewPage} />
       {proposal && <PromoteModal proposal={proposal} onClose={() => setProposal(null)} onConfirm={confirm} />}
+      {sessionProposals && reviewIdx == null && (
+        <SessionReview proposals={sessionProposals} onReview={setReviewIdx} onClose={() => setSessionProposals(null)} />
+      )}
+      {sessionProposals && reviewIdx != null && (
+        <PromoteModal proposal={sessionProposals[reviewIdx]} onClose={() => setReviewIdx(null)} onConfirm={confirmSession} />
+      )}
     </div>
   );
 };
@@ -467,6 +503,59 @@ const PromoteModal = ({ proposal, onClose, onConfirm }) => {
               </button>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =========================================================
+// SESSION REVIEW — the whole-conversation compile result
+// =========================================================
+const SessionReview = ({ proposals, onReview, onClose }) => {
+  const actionable = proposals.filter(p => p.decision !== "SKIP");
+  const skipped = proposals.length - actionable.length;
+  const promoted = proposals.filter(p => p._done).length;
+  return (
+    <div className="modal-veil" onClick={onClose}>
+      <div className="modal" style={{ width: "min(720px, 92vw)", maxHeight: "86vh", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal__head">
+          <I.Compile size={14} stroke="var(--accent-hi)" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, color: "var(--text-hi)" }}>
+              Session compiled into {actionable.length} vault note{actionable.length === 1 ? "" : "s"}
+            </div>
+            <div className="t-mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 3 }}>
+              Promote the ones you want — Claude wrote depth your vault was missing{skipped ? ` · ${skipped} skipped (already covered)` : ""}
+            </div>
+          </div>
+          <button className="btn btn--ghost btn--sm" onClick={onClose}><I.X size={12} /></button>
+        </div>
+
+        <div style={{ overflow: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
+          {actionable.length === 0 && (
+            <div style={{ padding: 28, textAlign: "center", color: "var(--text-dim)" }}>
+              Nothing to add — the vault already covers this conversation.
+            </div>
+          )}
+          {proposals.map((p, i) => p.decision === "SKIP" ? null : (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 12, alignItems: "center", padding: "10px 12px", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 6, opacity: p._done ? 0.55 : 1 }}>
+              <span className={`decision-tag ${(p.decision || "skip").toLowerCase()}`}>{p.decision}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: "var(--text-hi)", fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.target_title || p.title || "(note)"}</div>
+                <div className="t-mono" style={{ fontSize: 10.5, color: "var(--text-faint)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.target_section || p.area} · {p.reason}</div>
+              </div>
+              {p._done ? <span className="t-mono" style={{ fontSize: 11, color: "var(--neon-green)" }}>✓ promoted</span>
+                : (p._blocking && p._blocking.length)
+                  ? <button className="btn btn--sm" onClick={() => onReview(i)} title={p._blocking.join("; ")}><I.Eye size={11} /> Review ⚠</button>
+                  : <button className="btn btn--primary btn--sm" onClick={() => onReview(i)}><I.Eye size={11} /> Review</button>}
+            </div>
+          ))}
+        </div>
+
+        <div className="modal__foot">
+          <div className="t-mono" style={{ fontSize: 11, color: "var(--text-faint)" }}>{promoted} promoted · unchosen notes are discarded</div>
+          <button className="btn btn--primary" onClick={onClose}>Done</button>
         </div>
       </div>
     </div>

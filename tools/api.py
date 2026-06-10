@@ -618,6 +618,27 @@ async def promote(request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@app.post("/api/compile_session")
+async def compile_session_ep(request: Request):
+    """Compile a whole conversation into MULTIPLE vault improvements (one per concept,
+    enriching not consolidating). Returns proposals for the user to review + promote."""
+    data = await request.json()
+    convo = data.get("conversation") or ""
+    if not convo.strip():
+        return JSONResponse({"status": "error", "message": "empty conversation"}, status_code=400)
+    loop = asyncio.get_event_loop()
+    try:
+        async with _llm_sem:
+            proposals = await loop.run_in_executor(None, lambda: compiler.compile_session(convo))
+        out = []
+        for p in proposals:
+            blocking, warnings = compiler.validate_decision(p)
+            out.append({**p, "_blocking": blocking, "_warnings": warnings})
+        return {"status": "ok", "proposals": out}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 @app.post("/api/confirm_promotion")
 async def confirm_promotion(request: Request):
     data = await request.json()
