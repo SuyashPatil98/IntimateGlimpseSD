@@ -47,13 +47,40 @@ def sync_from_vault() -> int:
 
 
 def due_cards(limit: int = 60) -> list:
+    return browse(include_not_due=False, limit=limit)
+
+
+def browse(*, area: str | None = None, q: str | None = None,
+           include_not_due: bool = False, limit: int = 200) -> list:
+    """Filtered/searchable deck. Always due-first; `include_not_due` appends the rest
+    (so 'all caching cards' works, not just the due ones)."""
     sync_from_vault()
     now = state.now()
     with state.db() as s:
         rows = list(s.exec(select(state.Flashcard).where(state.Flashcard.suspended == False)))  # noqa: E712
-    due = [r for r in rows if _aware(r.due) <= now]
-    due.sort(key=lambda r: _aware(r.due))
-    return due[:limit]
+    if area:
+        rows = [r for r in rows if r.area == area]
+    if q:
+        ql = q.lower()
+        rows = [r for r in rows if ql in (r.question or "").lower()
+                or ql in (r.answer or "").lower() or ql in (r.page or "").lower()]
+    due = sorted((r for r in rows if _aware(r.due) <= now), key=lambda r: _aware(r.due))
+    not_due = sorted((r for r in rows if _aware(r.due) > now), key=lambda r: _aware(r.due))
+    return (due + not_due if include_not_due else due)[:limit]
+
+
+def area_counts() -> list[dict]:
+    """Per-area card counts (total + due now) for the filter pills."""
+    from collections import defaultdict
+    sync_from_vault()
+    now = state.now()
+    total, duec = defaultdict(int), defaultdict(int)
+    with state.db() as s:
+        for r in s.exec(select(state.Flashcard).where(state.Flashcard.suspended == False)):  # noqa: E712
+            total[r.area] += 1
+            if _aware(r.due) <= now:
+                duec[r.area] += 1
+    return [{"area": a, "total": total[a], "due": duec[a]} for a in sorted(total)]
 
 
 def rate(card_id, rating) -> dict | None:
@@ -109,3 +136,23 @@ def enrich(card_id) -> dict | None:
         s.add(fc)
         s.commit()
         return {"id": fc.id, "deepExplanation": text}
+
+
+def add_card(area: str, question: str, answer: str, page: str | None = None) -> dict | None:
+    """Manually add a flashcard (not from the vault). It lives in the DB alongside synced
+    cards; sync_from_vault only ADDS vault cards, so this one is never touched."""
+    q = (question or "").strip()
+    a = (answer or "").strip()
+    if not q or not a:
+        return None
+    page = (page or "").strip() or "Custom"
+    area = (area or "").strip() or "unknown"
+    h = _qhash(page, q)
+    with state.db() as s:
+        if s.exec(select(state.Flashcard).where(state.Flashcard.qhash == h)).first():
+            return {"duplicate": True}
+        fc = state.Flashcard(page=page, area=area, question=q, answer=a, qhash=h, due=state.now())
+        s.add(fc)
+        s.commit()
+        s.refresh(fc)
+        return {"id": fc.id}

@@ -462,13 +462,33 @@ async def ingest_upload(request: Request):
 
 
 @app.get("/api/flashcards/due")
-async def flashcards_due(limit: int = 60):
+async def flashcards_due(limit: int = 60, area: str = "", q: str = "", show_all: bool = False):
+    """The review deck, with optional filters: `area` (e.g. caching), `q` (text search),
+    `show_all` (include not-yet-due cards too — for browsing a whole topic)."""
     import flashcards as fc
     loop = asyncio.get_event_loop()
-    cards = await loop.run_in_executor(None, lambda: fc.due_cards(limit))
-    return {"cards": [{"id": c.id, "page": c.page, "area": c.area, "question": c.question,
-                       "answer": c.answer, "deepExplanation": c.deep_explanation or None,
-                       "due": c.due.isoformat(), "ease": round(c.ease, 2)} for c in cards]}
+
+    def build():
+        cards = fc.browse(area=area or None, q=q or None, include_not_due=show_all, limit=limit)
+        return {"cards": [{"id": c.id, "page": c.page, "area": c.area, "question": c.question,
+                           "answer": c.answer, "deepExplanation": c.deep_explanation or None,
+                           "due": c.due.isoformat(), "ease": round(c.ease, 2)} for c in cards],
+                "areas": fc.area_counts()}
+
+    return await loop.run_in_executor(None, build)
+
+
+@app.post("/api/flashcards")
+async def flashcards_add(request: Request):
+    """Manually add a flashcard."""
+    data = await request.json()
+    import flashcards as fc
+    loop = asyncio.get_event_loop()
+    res = await loop.run_in_executor(None, lambda: fc.add_card(
+        data.get("area", ""), data.get("question", ""), data.get("answer", ""), data.get("page")))
+    if res is None:
+        return JSONResponse({"status": "error", "message": "question and answer are required"}, status_code=400)
+    return {"status": "ok", **res}
 
 
 @app.post("/api/flashcards/rate")

@@ -64,12 +64,30 @@ const Flashcards = () => {
   const [deepOpen, setDeepOpen] = useState(false);
   const [reviewed, setReviewed] = useState({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
   const [deck, setDeck] = useState(FLASHCARD_DECK);
+  const [area, setArea] = useState("");
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [areas, setAreas] = useState([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
+  // Load the deck with the active filters (debounced so typing in search is smooth).
   useEffect(() => {
-    fetch("/api/flashcards/due?limit=60").then((r) => (r.ok ? r.json() : null)).then((d) => {
-      if (d && Array.isArray(d.cards) && d.cards.length) setDeck(d.cards);
-    }).catch(() => {});
-  }, []);
+    const qs = new URLSearchParams({ limit: "200" });
+    if (area) qs.set("area", area);
+    if (search.trim()) qs.set("q", search.trim());
+    if (showAll) qs.set("show_all", "1");
+    const t = setTimeout(() => {
+      fetch("/api/flashcards/due?" + qs.toString()).then((r) => (r.ok ? r.json() : null)).then((d) => {
+        if (!d) return;
+        setDeck(Array.isArray(d.cards) ? d.cards : []);
+        if (Array.isArray(d.areas)) setAreas(d.areas);
+        setIdx(0); setRevealed(false); setDeepOpen(false);
+        setReviewed({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
+      }).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [area, search, showAll, reloadKey]);
 
   const card = deck[idx % Math.max(1, deck.length)];
 
@@ -163,14 +181,39 @@ const Flashcards = () => {
         </div>
       </div>
 
+      {/* Filter / search bar */}
+      <div style={{ padding: "9px 24px", borderBottom: "1px solid var(--border)", display: "flex", gap: 10, alignItems: "center", background: "rgba(15,19,34,0.25)", flexWrap: "wrap" }}>
+        <div style={{ position: "relative" }}>
+          <I.Search size={12} stroke="var(--text-dim)" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search cards…"
+            style={{ width: 200, padding: "6px 10px 6px 30px", background: "var(--bg-deep)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text-hi)", fontSize: 12.5, outline: "none", fontFamily: "var(--font-body)" }} />
+        </div>
+        <select className="select" value={area} onChange={(e) => { setArea(e.target.value); setShowAll(!!e.target.value); }}>
+          <option value="">All areas</option>
+          {areas.map((a) => <option key={a.area} value={a.area}>{(AREAS[a.area] && AREAS[a.area].label) || a.area} ({a.total})</option>)}
+        </select>
+        <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 6, overflow: "hidden" }}>
+          {[["due", "Due"], ["all", "All"]].map(([k, lbl]) => {
+            const on = (k === "all") === showAll;
+            return <button key={k} onClick={() => setShowAll(k === "all")} style={{ padding: "6px 12px", fontSize: 11, fontFamily: "var(--font-mono)", background: on ? "var(--bg-elevated)" : "transparent", color: on ? "var(--text-hi)" : "var(--text-dim)", borderRight: k === "due" ? "1px solid var(--border)" : "none" }}>{lbl}</button>;
+          })}
+        </div>
+        <div style={{ flex: 1 }} />
+        <span className="t-mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{deck.length} card{deck.length === 1 ? "" : "s"}</span>
+        <button className="btn btn--sm" onClick={() => setAddOpen(true)}><I.Plus size={11} /> Add card</button>
+      </div>
+
       {/* Progress bar */}
       <div className="pbar" style={{ borderRadius: 0, height: 2 }}>
-        <i style={{ width: `${(done / total) * 100}%` }} />
+        <i style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
       </div>
 
       {/* Card stage */}
       <div style={{ flex: 1, display: "grid", placeItems: "center", padding: "30px 20px", minHeight: 0, overflow: "auto" }}>
-        {done >= total ? (
+        {total === 0 ? (
+          <EmptyDeck filtered={!!(area || search)} onAdd={() => setAddOpen(true)}
+            onClear={() => { setArea(""); setSearch(""); setShowAll(false); }} />
+        ) : done >= total ? (
           <SessionCompleteCard reviewed={reviewed} total={total} onAgain={() => { setReviewed({Again:0,Hard:0,Good:0,Easy:0}); setIdx(0); }} />
         ) : (
           <CardStage
@@ -186,6 +229,80 @@ const Flashcards = () => {
             total={total}
           />
         )}
+      </div>
+
+      {addOpen && (
+        <AddCardModal defaultArea={area || "caching"} onClose={() => setAddOpen(false)}
+          onAdded={() => { setAddOpen(false); setReloadKey(k => k + 1); }} />
+      )}
+    </div>
+  );
+};
+
+const EmptyDeck = ({ filtered, onAdd, onClear }) => (
+  <div style={{ textAlign: "center", color: "var(--text-dim)" }}>
+    <I.Cards size={26} stroke="var(--text-faint)" />
+    <div style={{ marginTop: 12, fontSize: 15, color: "var(--text-hi)" }}>
+      {filtered ? "No cards match this filter" : "Nothing due right now"}
+    </div>
+    <div className="t-mono" style={{ fontSize: 12, marginTop: 6 }}>
+      {filtered ? "Try \"All\" instead of \"Due\", a different area, or add a card." : "Switch to \"All\" to browse, or add a card."}
+    </div>
+    <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "center" }}>
+      {filtered && <button className="btn btn--sm" onClick={onClear}><I.X size={11} /> Clear filters</button>}
+      <button className="btn btn--accent btn--sm" onClick={onAdd}><I.Plus size={11} /> Add card</button>
+    </div>
+  </div>
+);
+
+const AddCardModal = ({ onClose, onAdded, defaultArea }) => {
+  const [area, setArea] = useState(defaultArea || "caching");
+  const [question, setQ] = useState("");
+  const [answer, setA] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    if (!question.trim() || !answer.trim()) { setErr("Question and answer are both required."); return; }
+    setBusy(true); setErr("");
+    try {
+      const r = await window.API.post("/api/flashcards", { area, question, answer });
+      if (r.status === "ok" && !r.duplicate) onAdded && onAdded();
+      else setErr(r.duplicate ? "A card with this question already exists." : (r.message || "Failed to add."));
+    } catch (e) { setErr(String(e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="modal-veil" onClick={onClose}>
+      <div className="modal" style={{ width: "min(560px, 92vw)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal__head">
+          <I.Plus size={14} stroke="var(--accent-hi)" />
+          <div style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, color: "var(--text-hi)" }}>Add a flashcard</div>
+          <button className="btn btn--ghost btn--sm" onClick={onClose}><I.X size={12} /></button>
+        </div>
+        <div className="modal__body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <div className="t-label" style={{ marginBottom: 5 }}>AREA</div>
+            <select className="select" value={area} onChange={(e) => setArea(e.target.value)} style={{ width: "100%" }}>
+              {AREA_ORDER.map((a) => <option key={a} value={a}>{AREAS[a].label}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="t-label" style={{ marginBottom: 5 }}>QUESTION</div>
+            <textarea className="md-area" style={{ minHeight: 56 }} value={question} onChange={(e) => setQ(e.target.value)} placeholder="Specific, e.g. 'What does a quorum read guarantee under a partition?'" />
+          </div>
+          <div>
+            <div className="t-label" style={{ marginBottom: 5 }}>ANSWER</div>
+            <textarea className="md-area" style={{ minHeight: 88 }} value={answer} onChange={(e) => setA(e.target.value)} placeholder="A complete answer in a sentence or two." />
+          </div>
+          {err && <div className="t-mono" style={{ fontSize: 11, color: "var(--neon-amber)" }}>⚠ {err}</div>}
+        </div>
+        <div className="modal__foot">
+          <div className="t-mono" style={{ fontSize: 11, color: "var(--text-faint)" }}>added to your deck · scheduled like any card</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn--ghost" onClick={onClose}>Cancel</button>
+            <button className="btn btn--primary" onClick={save} disabled={busy}><I.Check size={12} /> {busy ? "Adding…" : "Add card"}</button>
+          </div>
+        </div>
       </div>
     </div>
   );
