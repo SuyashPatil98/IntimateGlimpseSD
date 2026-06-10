@@ -55,10 +55,11 @@ Checks: `python -m pytest tools\tests -q` · `python tools\eval_retrieval.py` ·
 | M0–M4 | Foundations · hybrid retrieval · LLM adapter · sessions/compiler/pipeline · React cockpit (8 live screens) | ✅ done |
 | M5 | Raw ingest pipeline + watcher (drop PDF → sections → review queue) | ✅ done |
 | — | **Self-maintaining loop** — audit gap-detector + review queue (draft → review → promote) | ✅ done |
-| — | Vault & Sync panel (real git backup) · vault cleanup · MarkdownView · `run.ps1` · honest status pill | ✅ done |
+| — | Session compiler (whole convo → multiple enriching notes) · Vault & Sync · vault cleanup · MarkdownView · `run.ps1` · status pill | ✅ done |
+| M6 | Analytics feedback loop — `analytics.py` + usage-driven **study planner** (the Roadmap screen) | ✅ done |
 | M8 | Flashcard/quiz enrichment (deep "why" per card, button-triggered) | ⬜ TODO — button exists, `deepExplanation` is `None` |
-| M6 | Analytics / feedback loop (`tools/analytics.py` missing) | ⬜ TODO |
 | M7 | Cross-device deploy (Docker + Caddy + Tailscale) + PWA | ⬜ TODO |
+| bug | Duplicate flashcard rows (sync dedup) — `flashcards.py:sync_from_vault` re-inserts; flagged | ⬜ TODO |
 
 ---
 
@@ -110,13 +111,17 @@ slow local GPU). Nothing enters the vault without approval. Queue currently hold
 ---
 
 ## Next steps (recommended order)
-1. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
+1. **Fix the flashcard dedup bug** — `flashcards.py:sync_from_vault` inserts duplicate rows
+   (the analytics surfaced "What's an ADR?" 4×). Clean up dups + make sync idempotent.
+2. **M8 — flashcard enrichment** (highest daily-learning value, smallest build). Wire the "Improve
    flashcards" button → a button-triggered Claude call that fills `deepExplanation` per card
    (token-controlled, never automatic — see the `flashcard-quiz-enrichment-on-demand` memory). The
    `/api/flashcards/due` payload returns `deepExplanation: None` today.
-2. **M6 — analytics** (`tools/analytics.py`) over `QueryLog`/`PageStat`/`TokenUsage`:
-   most-queried-never-promoted, flywheel health, queue throughput.
 3. **M7 — deploy**: Docker + Caddy + Tailscale (state already lives in SQLite) + PWA.
+
+`M6 — analytics`: ✅ done — `tools/analytics.py` (`compute()`) + `GET /api/analytics`, surfaced as the
+usage-driven **study planner** (Roadmap screen): study-next, weak flashcards, thin-but-queried pages,
+where the vault answers well, per-area mastery, flywheel health.
 
 ## Known loose ends
 - **Chat is slow** (~30s first word) on this GPU — qwen3:4b runs ~33% on CPU. Levers: Claude Haiku for
