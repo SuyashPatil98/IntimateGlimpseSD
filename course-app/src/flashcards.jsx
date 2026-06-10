@@ -90,12 +90,30 @@ const Flashcards = () => {
     return () => window.removeEventListener("keydown", h);
   }, [revealed, idx]);
 
+  const [enriching, setEnriching] = useState(false);
+
   const rate = (label) => {
     if (card && card.id != null && window.API) API.post("/api/flashcards/rate", { cardId: card.id, rating: label });
     setReviewed(r => ({ ...r, [label]: r[label] + 1 }));
     setRevealed(false);
     setDeepOpen(false);
     setIdx(i => i + 1);
+  };
+
+  // M8: on-demand deep explanation for the current card (Claude, button-triggered).
+  const enrichCurrent = async () => {
+    if (!card || card.id == null || enriching) return;
+    if (card.deepExplanation) { setRevealed(true); setDeepOpen(true); return; }
+    setEnriching(true);
+    try {
+      const r = await window.API.post(`/api/flashcards/${card.id}/enrich`, {});
+      if (r.status === "ok" && r.deepExplanation) {
+        setDeck(dk => dk.map(c => c.id === card.id ? { ...c, deepExplanation: r.deepExplanation } : c));
+        setRevealed(true);
+        setDeepOpen(true);
+      }
+    } catch (e) { /* ignore */ }
+    setEnriching(false);
   };
 
   const total = deck.length;
@@ -138,8 +156,9 @@ const Flashcards = () => {
               </div>
             ))}
           </div>
-          <button className="btn btn--accent btn--sm">
-            <I.Sparkle size={11} /> Improve flashcards
+          <button className="btn btn--accent btn--sm" onClick={enrichCurrent}
+            disabled={enriching || !card || card.id == null} title="Generate a deep 'why' for this card (Claude)">
+            <I.Sparkle size={11} /> {enriching ? "Generating…" : "Improve this card"}
           </button>
         </div>
       </div>
@@ -161,6 +180,8 @@ const Flashcards = () => {
             deepOpen={deepOpen}
             onToggleDeep={() => setDeepOpen(o => !o)}
             onRate={rate}
+            onEnrich={enrichCurrent}
+            enriching={enriching}
             idx={idx + 1}
             total={total}
           />
@@ -170,7 +191,7 @@ const Flashcards = () => {
   );
 };
 
-const CardStage = ({ card, revealed, onReveal, deepOpen, onToggleDeep, onRate, idx, total }) => {
+const CardStage = ({ card, revealed, onReveal, deepOpen, onToggleDeep, onRate, onEnrich, enriching, idx, total }) => {
   const def = AREAS[card.area];
   return (
     <div style={{
@@ -227,31 +248,40 @@ const CardStage = ({ card, revealed, onReveal, deepOpen, onToggleDeep, onRate, i
             </div>
           </div>
 
-          {/* Deep explanation */}
-          {card.deepExplanation && (
-            <div style={{
-              borderTop: "1px dashed var(--border)", paddingTop: 14,
-            }}>
-              <button onClick={onToggleDeep} style={{
-                display: "flex", alignItems: "center", gap: 8,
-                color: "var(--accent-hi)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 0.06,
-              }}>
-                <I.ChevD size={12} style={{ transform: deepOpen ? "none" : "rotate(-90deg)", transition: "transform 150ms" }} />
-                DEEP EXPLANATION {deepOpen ? "" : "·  TAP TO EXPAND"}
-              </button>
-              {deepOpen && (
-                <div style={{
-                  marginTop: 12, padding: "12px 14px",
-                  background: "rgba(139,125,255,0.04)",
-                  border: "1px solid var(--accent-line)",
-                  borderRadius: 6,
-                  color: "var(--text-body)", fontSize: 13.5, lineHeight: 1.6, fontFamily: "var(--font-body)",
+          {/* Deep explanation (M8 — generated on demand by Claude) */}
+          <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 14 }}>
+            {card.deepExplanation ? (
+              <>
+                <button onClick={onToggleDeep} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  color: "var(--accent-hi)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 0.06,
                 }}>
-                  {card.deepExplanation}
-                </div>
-              )}
-            </div>
-          )}
+                  <I.ChevD size={12} style={{ transform: deepOpen ? "none" : "rotate(-90deg)", transition: "transform 150ms" }} />
+                  DEEP EXPLANATION {deepOpen ? "" : "·  TAP TO EXPAND"}
+                </button>
+                {deepOpen && (
+                  <div style={{
+                    marginTop: 12, padding: "12px 14px",
+                    background: "rgba(139,125,255,0.04)",
+                    border: "1px solid var(--accent-line)", borderRadius: 6,
+                    color: "var(--text-body)", fontSize: 13.5, lineHeight: 1.6, fontFamily: "var(--font-body)",
+                  }}>
+                    {card.deepExplanation}
+                  </div>
+                )}
+              </>
+            ) : (
+              <button onClick={onEnrich} disabled={enriching || card.id == null} style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "7px 12px", borderRadius: 6,
+                border: "1px solid var(--accent-line)", background: "var(--accent-soft)",
+                color: "var(--accent-hi)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 0.04,
+                opacity: (enriching || card.id == null) ? 0.6 : 1,
+              }}>
+                <I.Sparkle size={12} /> {enriching ? "GENERATING…" : "EXPLAIN DEEPER · CLAUDE"}
+              </button>
+            )}
+          </div>
 
           {/* Rate row */}
           <div style={{ marginTop: 8, paddingTop: 14, borderTop: "1px dashed var(--border)" }}>

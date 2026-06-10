@@ -467,7 +467,7 @@ async def flashcards_due(limit: int = 60):
     loop = asyncio.get_event_loop()
     cards = await loop.run_in_executor(None, lambda: fc.due_cards(limit))
     return {"cards": [{"id": c.id, "page": c.page, "area": c.area, "question": c.question,
-                       "answer": c.answer, "deepExplanation": None,
+                       "answer": c.answer, "deepExplanation": c.deep_explanation or None,
                        "due": c.due.isoformat(), "ease": round(c.ease, 2)} for c in cards]}
 
 
@@ -479,6 +479,18 @@ async def flashcards_rate(request: Request):
     res = await loop.run_in_executor(
         None, lambda: fc.rate(data.get("cardId") or data.get("id"), data.get("rating", "good")))
     return {"status": "ok", "card": res}
+
+
+@app.post("/api/flashcards/{card_id}/enrich")
+async def flashcards_enrich(card_id: int):
+    """M8: generate (via Claude) + store a deep 'why' explanation for one card."""
+    import flashcards as fc
+    loop = asyncio.get_event_loop()
+    async with _llm_sem:
+        res = await loop.run_in_executor(None, lambda: fc.enrich(card_id))
+    if res is None:
+        return JSONResponse({"status": "error", "message": "card not found"}, status_code=404)
+    return {"status": "ok", **res}
 
 
 @app.get("/api/roadmap")

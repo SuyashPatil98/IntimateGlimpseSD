@@ -84,3 +84,28 @@ def rate(card_id, rating) -> dict | None:
         s.commit()
         return {"id": fc.id, "due": fc.due.isoformat(),
                 "interval_days": fc.interval_days, "ease": round(fc.ease, 2)}
+
+
+def enrich(card_id) -> dict | None:
+    """M8: generate + store a deep 'why' explanation for one card, on demand (Claude).
+    Button-triggered and per-card so it never auto-spends tokens. Re-running refreshes it."""
+    import llm_adapter
+    from prompts import load_prompt
+    with state.db() as s:
+        fc = s.get(state.Flashcard, card_id)
+        if not fc:
+            return None
+        page, question, answer = fc.page, fc.question, fc.answer
+    p = vault.collect_pages().get(page)
+    page_md = p["body"][:6000] if p else ""
+    user = (f'<page name="{page}">\n{page_md}\n</page>\n'
+            f"<question>{question}</question>\n<answer>{answer}</answer>")
+    text = llm_adapter.complete("promote", load_prompt("flashcard_enricher"), user).strip()
+    with state.db() as s:
+        fc = s.get(state.Flashcard, card_id)
+        if not fc:
+            return None
+        fc.deep_explanation = text
+        s.add(fc)
+        s.commit()
+        return {"id": fc.id, "deepExplanation": text}
